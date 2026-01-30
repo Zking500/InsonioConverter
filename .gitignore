@@ -1,0 +1,17 @@
+# Ignorar el entorno virtual (muy importante, pesa mucho)
+venv/
+env/
+
+# Ignorar archivos compilados de Python
+__pycache__/
+*.pyc
+
+# Ignorar archivos de configuración del sistema o IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Ignorar builds y distribuciones (cuando crees el .exe)
+build/
+dist/
+*.spec

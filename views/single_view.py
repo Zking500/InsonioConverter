@@ -1,37 +1,68 @@
 import flet as ft
 from utils.ffmpeg_engine import run_conversion
+from utils.config_loader import APP_DATA
 
 def SingleVideoView(page: ft.Page):
-    # Variables de estado
-    selected_file = ft.Text("Ningún archivo seleccionado")
+    selected_path = ft.Text("Ningún archivo seleccionado", italic=True, color="grey")
     
-    def on_file_picked(e: ft.FilePickerResultEvent):
+    # --- CORRECCIÓN AQUÍ: Quitamos ": ft.FilePickerResultEvent" ---
+    def on_file_picked(e): 
         if e.files:
-            selected_file.value = e.files[0].path
-            selected_file.update()
+            selected_path.value = e.files[0].path
+            selected_path.color = "white"
+            selected_path.weight = "bold"
+            selected_path.update()
 
     file_picker = ft.FilePicker(on_result=on_file_picked)
-    page.overlay.append(file_picker) # Importante para que funcione el popup
+    page.overlay.append(file_picker)
 
+    # Dropdown de encoders
+    options_list = [ft.dropdown.Option(enc) for enc in APP_DATA['settings']['encoders_list']]
     encoder_dd = ft.Dropdown(
-        label="Encoder",
-        options=[ft.dropdown.Option("libx264"), ft.dropdown.Option("libx265")],
-        value="libx264"
+        label="Encoder de Video",
+        options=options_list,
+        value=options_list[0].key,
+        width=300
     )
 
     def convert_click(e):
-        if "Ningún" in selected_file.value:
+        if "Ningún" in selected_path.value:
+            page.snack_bar = ft.SnackBar(ft.Text("⚠️ Selecciona un video primero"))
+            page.snack_bar.open = True
+            page.update()
             return
         
-        res, msg = run_conversion(selected_file.value, ".mp4", encoder_dd.value)
-        page.snack_bar = ft.SnackBar(ft.Text(msg))
+        btn_action.text = "Procesando..."
+        btn_action.disabled = True
+        btn_action.update()
+
+        # Llamamos al motor
+        success, msg = run_conversion(selected_path.value, ".mp4", encoder_dd.value)
+        
+        btn_action.text = "¡Convertir!"
+        btn_action.disabled = False
+        btn_action.update()
+
+        page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor="green" if success else "red")
         page.snack_bar.open = True
         page.update()
 
+    btn_action = ft.ElevatedButton(
+        "¡Convertir!", 
+        icon="play_circle", 
+        on_click=convert_click,
+        bgcolor=ft.colors.BLUE_600,
+        color="white"
+    )
+
     return ft.Column([
-        ft.Text("Convertir un solo video", size=20, weight="bold"),
-        ft.ElevatedButton("Seleccionar Video", icon=ft.icons.VIDEO_FILE, on_click=lambda _: file_picker.pick_files()),
-        selected_file,
+        ft.Text("Modo Simple", size=25, weight="bold"),
+        ft.Divider(),
+        ft.Text("1. Selecciona tu video:"),
+        ft.ElevatedButton("Buscar Archivo", icon="folder_open", on_click=lambda _: file_picker.pick_files()),
+        selected_path,
+        ft.Text("2. Configuración:"),
         encoder_dd,
-        ft.ElevatedButton("¡Convertir!", on_click=convert_click, bgcolor=ft.colors.BLUE_600, color="white")
-    ], spacing=20)
+        ft.Divider(),
+        btn_action
+    ], spacing=15)

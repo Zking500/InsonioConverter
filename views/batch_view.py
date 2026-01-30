@@ -2,30 +2,62 @@ import flet as ft
 from utils.ffmpeg_engine import run_conversion
 
 def BatchVideoView(page: ft.Page):
-    files_list = ft.Column() # Aquí mostraremos la lista visual
-    stored_files = [] # Aquí guardamos las rutas reales
+    files_view = ft.Column(scroll=ft.ScrollMode.AUTO)
+    stored_paths = []
 
-    def on_files_picked(e: ft.FilePickerResultEvent):
+    # --- CORRECCIÓN AQUÍ: Quitamos ": ft.FilePickerResultEvent" ---
+    def on_files_picked(e):
         if e.files:
             for f in e.files:
-                stored_files.append(f.path)
-                files_list.controls.append(ft.Text(f"📂 {f.name}"))
-            files_list.update()
+                stored_paths.append(f.path)
+                files_view.controls.append(
+                    ft.Container(
+                        content=ft.Row([
+                            ft.Icon(name="movie", color="blue"),
+                            ft.Text(f.name)
+                        ]),
+                        padding=5,
+                        bgcolor=ft.colors.with_opacity(0.1, "white"),
+                        border_radius=5
+                    )
+                )
+            files_view.update()
 
     file_picker = ft.FilePicker(on_result=on_files_picked)
     page.overlay.append(file_picker)
 
-    def process_all(e):
-        for file_path in stored_files:
-            run_conversion(file_path, ".mp4", "libx264")
+    def process_batch(e):
+        if not stored_paths:
+            return
+
+        prog_bar = ft.ProgressBar(width=400, color="amber")
+        files_view.controls.append(prog_bar)
+        files_view.update()
+
+        count = 0
+        for path in stored_paths:
+            # Por defecto usamos x264 para batch, luego podrías poner un dropdown aquí también
+            run_conversion(path, ".mp4", "libx264")
+            count += 1
         
-        page.snack_bar = ft.SnackBar(ft.Text(f"✅ Se procesaron {len(stored_files)} videos"))
+        files_view.controls.remove(prog_bar)
+        page.snack_bar = ft.SnackBar(ft.Text(f"✅ Se completaron {count} videos"))
         page.snack_bar.open = True
         page.update()
 
     return ft.Column([
-        ft.Text("Procesamiento por Lote (Batch)", size=20, weight="bold"),
-        ft.ElevatedButton("Añadir Videos", icon=ft.icons.LIBRARY_ADD, on_click=lambda _: file_picker.pick_files(allow_multiple=True)),
-        ft.Container(content=files_list, height=150, border=ft.border.all(1, "grey"), border_radius=10, padding=10),
-        ft.ElevatedButton("Procesar Todo", on_click=process_all, bgcolor=ft.colors.GREEN_600, color="white")
-    ], spacing=20)
+        ft.Text("Modo Lote (Batch)", size=25, weight="bold"),
+        ft.Text("Convierte múltiples videos a MP4 (h.264)."),
+        ft.Row([
+            ft.ElevatedButton("Añadir Videos", icon="add", on_click=lambda _: file_picker.pick_files(allow_multiple=True)),
+            ft.ElevatedButton("Limpiar Lista", icon="delete", color="red", on_click=lambda _: None)
+        ]),
+        ft.Container(
+            content=files_view,
+            height=300,
+            border=ft.border.all(1, "grey"),
+            border_radius=8,
+            padding=10
+        ),
+        ft.ElevatedButton("Procesar Todo", icon="rocket_launch", on_click=process_batch, bgcolor="green", color="white")
+    ], spacing=15)

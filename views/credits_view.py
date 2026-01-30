@@ -1,12 +1,22 @@
 import flet as ft
+from utils.config_loader import APP_DATA
 
 def CreditsView():
+    info = APP_DATA['app_info']
+    links = APP_DATA['urls']
+
     return ft.Column([
-        ft.Icon(ft.icons.ROCKET_LAUNCH, size=50, color="orange"),
-        ft.Text("Z-Converter Pro", size=30, weight="bold"),
-        ft.Text("Desarrollado por Z King @ S&O Systems", italic=True),
-        ft.Divider(),
-        ft.Text("Si esta herramienta te ahorró tiempo, considera donar:"),
-        ft.ElevatedButton("☕ Comprar un café", url="https://paypal.me/tucuenta", icon=ft.icons.PAYMENT),
-        ft.Text("v1.0.0 - Hecho con Python & Flet")
+        # CORREGIDOS TODOS LOS ICONOS A STRINGS
+        ft.Icon(name="terminal", size=80, color=ft.colors.CYAN), # "terminal" en lugar de CODE
+        ft.Text(info['name'], size=40, weight="bold", color=ft.colors.CYAN),
+        ft.Text(f"Versión: {info['version']}", italic=True),
+        ft.Divider(thickness=2),
+        ft.Text(f"Desarrollador: {info['developer']}"),
+        ft.Text(f"Compañía: {info['company']}", weight="bold"),
+        ft.Container(height=20),
+        ft.Row([
+            ft.ElevatedButton("Donar", icon="payment", url=links['donation']),
+            ft.ElevatedButton("GitHub", icon="code", url=links['github']),
+            ft.ElevatedButton("Web", icon="public", url=links['website']), # "public" es el icono de mundo/web
+        ], alignment=ft.MainAxisAlignment.CENTER)
     ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
