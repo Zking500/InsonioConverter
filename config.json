@@ -1,7 +1,7 @@
 {
   "app_info": {
     "name": "Insonio Converter",
-    "version": "v0.2.0 Beta",
+    "version": "v1.0.0 Alpha",
     "company": "S&O Systems",
     "developer": "Z King",
     "description": "Herramienta profesional de codificación de video sin servidores."
@@ -11,24 +11,28 @@
     "website": "https://syosystem.zkingserver.vip/",
     "github": "https://github.com/zking500"
   },
-  "settings": {
-    "window_width": 900,
-    "window_height": 650,
-    "theme_mode": "dark",
-    "encoders_list": ["libx264", "libx265", "vp9", "libaom-av1"]
-  },
   "ui_labels": {
-    "nav_convert": "Convertir",
-    "nav_batch": "Lote",
-    "nav_credits": "Créditos",
+    "lbl_developer": "Desarrollador:",
+    "lbl_company": "Empresa:",
     "btn_donate": "Donar",
     "btn_github": "GitHub",
-    "btn_web": "Web Oficial",
-    "lbl_developer": "Desarrollador:",
-    "lbl_company": "Compañía:"
+    "btn_web": "Web"
   },
-  "messages": {
-    "welcome": "Bienvenido a Insonio",
-    "error_load": "Error al cargar configuración"
+  "settings": {
+    "window_width": 1000,
+    "window_height": 700,
+    "theme_mode": "dark",
+    "default_encoder": "libx264",
+    "default_format": ".mp4",
+    "default_bitrate": "Auto",
+    "save_location": "same_as_source",
+    "encoders_list": [
+      "libx264", 
+      "libx265", 
+      "vp9",
+      "libaom-av1"
+    ],
+    "formats_list": [".mp4", ".mkv", ".avi", ".mov"],
+    "bitrates_list": ["Auto", "2M", "4M", "8M", "15M", "25M"]
   }
 }

@@ -19,7 +19,7 @@ class SingleVideoView(ft.Container):
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(radius=10),
                 padding=20,
-                bgcolor=ft.colors.CYAN_700,
+                bgcolor=ft.Colors.CYAN_700,
                 color="white"
             )
         )
@@ -38,14 +38,14 @@ class SingleVideoView(ft.Container):
                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
                 alignment=ft.alignment.center,
                 height=300,
-                border=ft.border.all(2, ft.colors.GREY_400),
+                border=ft.border.all(2, ft.Colors.GREY_400),
                 border_radius=20,
                 on_click=lambda _: self.picker.pick_files(),
-                animate=ft.animation.Animation(300, "bounceOut"),
+                animate=ft.Animation(300, "bounceOut"),
                 gradient=ft.LinearGradient(
                     begin=ft.alignment.top_left,
                     end=ft.alignment.bottom_right,
-                    colors=[ft.colors.with_opacity(0.1, "blue"), ft.colors.with_opacity(0.1, "purple")]
+                    colors=[ft.Colors.with_opacity(0.1, "blue"), ft.Colors.with_opacity(0.1, "purple")]
                 )
             ),
             ft.Container(height=20),

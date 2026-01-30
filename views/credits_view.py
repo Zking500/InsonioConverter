@@ -5,13 +5,20 @@ def CreditsView():
     # 1. Extraemos las secciones para escribir menos código
     info = APP_DATA['app_info']
     links = APP_DATA['urls']
-    labels = APP_DATA['ui_labels']  # <--- ¡Nueva sección!
+    # Usamos etiquetas por defecto si no existen en el config
+    labels = APP_DATA.get('ui_labels', {
+        'lbl_developer': 'Desarrollador:',
+        'lbl_company': 'Empresa:',
+        'btn_donate': 'Donar',
+        'btn_github': 'GitHub',
+        'btn_web': 'Web'
+    })
 
     return ft.Column([
-        ft.Icon(name="terminal", size=80, color=ft.colors.CYAN),
+        ft.Icon(name="terminal", size=80, color=ft.Colors.CYAN),
         
         # Usamos info del JSON
-        ft.Text(info['name'], size=40, weight="bold", color=ft.colors.CYAN),
+        ft.Text(info['name'], size=40, weight="bold", color=ft.Colors.CYAN),
         ft.Text(f"Versión: {info['version']}", italic=True),
         
         ft.Divider(thickness=2),

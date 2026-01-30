@@ -26,16 +26,16 @@ class ConfigView(ft.Container):
 
         return ft.Column([
             ft.Text("⚙️ Configuración del Motor", size=30, weight="bold", 
-                   color=ft.colors.CYAN if self.page.theme_mode == ft.ThemeMode.DARK else ft.colors.BLUE),
+                   color=ft.Colors.CYAN if self.page.theme_mode == ft.ThemeMode.DARK else ft.Colors.BLUE),
             ft.Divider(),
             
             ft.Text("Opciones de Video", size=20, weight="bold"),
             ft.Container(
                 content=ft.Column([enc_dropdown, fmt_dropdown, bit_dropdown], spacing=20),
                 padding=20,
-                bgcolor=ft.colors.with_opacity(0.05, "white"),
+                bgcolor=ft.Colors.with_opacity(0.05, "white"),
                 border_radius=10,
-                animate=ft.animation.Animation(300, "easeOut")
+                animate=ft.Animation(300, "easeOut")
             ),
 
             ft.Text("Almacenamiento", size=20, weight="bold"),
@@ -45,7 +45,7 @@ class ConfigView(ft.Container):
             ft.ElevatedButton(
                 "Guardar Cambios", 
                 icon="save", 
-                style=ft.ButtonStyle(bgcolor=ft.colors.GREEN_600, color="white"),
+                style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600, color="white"),
                 on_click=self._guardar_config
             )
         ], spacing=15, scroll=ft.ScrollMode.HIDDEN)
@@ -55,8 +55,8 @@ class ConfigView(ft.Container):
             label=label,
             options=[ft.dropdown.Option(o) for o in opciones],
             value=valor_actual,
-            border_color=ft.colors.OUTLINE,
-            focused_border_color=ft.colors.CYAN
+            border_color=ft.Colors.OUTLINE,
+            focused_border_color=ft.Colors.CYAN
         )
 
     def _guardar_config(self, e):

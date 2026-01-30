@@ -15,7 +15,7 @@ class ProcessingView(ft.Container):
         
         # UI Elements
         self.status_text = ft.Text("Inicializando motor...", size=20, text_align="center")
-        self.progress_ring = ft.ProgressRing(width=60, height=60, stroke_width=5, color=ft.colors.CYAN)
+        self.progress_ring = ft.ProgressRing(width=60, height=60, stroke_width=5, color=ft.Colors.CYAN)
         
         self.content = ft.Column([
             self.progress_ring,
