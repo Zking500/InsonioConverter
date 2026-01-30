@@ -1,0 +1,24 @@
+{
+  "app_info": {
+    "name": "Z-Converter Studio",
+    "version": "v0.2.0 Beta",
+    "company": "S&O Systems",
+    "developer": "Z King",
+    "description": "Herramienta profesional de codificación de video sin servidores."
+  },
+  "urls": {
+    "donation": "https://ko-fi.com/zking500",
+    "website": "https://syosystem.zkingserver.vip/",
+    "github": "https://github.com/zking500"
+  },
+  "settings": {
+    "window_width": 900,
+    "window_height": 650,
+    "theme_mode": "dark",
+    "encoders_list": [
+      "libx264 (MP4 Estándar)", 
+      "libx265 (HEVC - Alta Compresión)", 
+      "vp9 (WebM - YouTube)"
+    ]
+  }
+}
