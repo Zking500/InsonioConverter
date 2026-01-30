@@ -5,18 +5,18 @@ from utils.config_loader import APP_DATA
 def SingleVideoView(page: ft.Page):
     selected_path = ft.Text("Ningún archivo seleccionado", italic=True, color="grey")
     
-    # --- CORRECCIÓN AQUÍ: Quitamos ": ft.FilePickerResultEvent" ---
-    def on_file_picked(e): 
+    def on_file_picked(e):
         if e.files:
             selected_path.value = e.files[0].path
             selected_path.color = "white"
             selected_path.weight = "bold"
             selected_path.update()
 
-    file_picker = ft.FilePicker(on_result=on_file_picked)
+    # Inicialización segura del FilePicker
+    file_picker = ft.FilePicker()
+    file_picker.on_result = on_file_picked
     page.overlay.append(file_picker)
 
-    # Dropdown de encoders
     options_list = [ft.dropdown.Option(enc) for enc in APP_DATA['settings']['encoders_list']]
     encoder_dd = ft.Dropdown(
         label="Encoder de Video",
@@ -36,7 +36,6 @@ def SingleVideoView(page: ft.Page):
         btn_action.disabled = True
         btn_action.update()
 
-        # Llamamos al motor
         success, msg = run_conversion(selected_path.value, ".mp4", encoder_dd.value)
         
         btn_action.text = "¡Convertir!"
@@ -51,7 +50,7 @@ def SingleVideoView(page: ft.Page):
         "¡Convertir!", 
         icon="play_circle", 
         on_click=convert_click,
-        bgcolor=ft.colors.BLUE_600,
+        bgcolor="blue", # <--- CORREGIDO: Usamos string "blue" en lugar de ft.colors...
         color="white"
     )
 

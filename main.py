@@ -1,67 +1,129 @@
 import flet as ft
-from utils.config_loader import APP_DATA
-from views.single_view import SingleVideoView
-from views.batch_view import BatchVideoView
-from views.credits_view import CreditsView
+import subprocess
+import os
+import json
 
-def main(page: ft.Page):
-    # Configuración visual
-    page.title = f"{APP_DATA['app_info']['name']} {APP_DATA['app_info']['version']}"
-    page.window_width = APP_DATA['settings']['window_width']
-    page.window_height = APP_DATA['settings']['window_height']
-    page.theme_mode = ft.ThemeMode.DARK
+# --- 1. CONFIGURACIÓN ---
+try:
+    with open('config.json', 'r', encoding='utf-8') as f:
+        CONFIG = json.load(f)
+except:
+    CONFIG = {
+        "app_info": {"name": "Insonio Converter", "version": "Rescue Mode"},
+        "settings": {"encoders_list": ["libx264", "libx265", "vp9"]}
+    }
+
+# --- 2. LÓGICA DE FFMPEG ---
+def run_ffmpeg(input_path, encoder):
+    base_name = os.path.splitext(input_path)[0]
+    output_file = f"{base_name}_converted.mp4"
     
-    main_content = ft.Container(expand=True, padding=20)
+    comando = [
+        'ffmpeg', '-y', '-i', input_path,
+        '-c:v', encoder, '-preset', 'fast', output_file
+    ]
+    
+    try:
+        # Configuración para ocultar ventana CMD en Windows
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        subprocess.run(comando, startupinfo=startupinfo, check=True)
+        return True, f"✅ Éxito: {os.path.basename(output_file)}"
+    except Exception as e:
+        return False, f"❌ Error: {str(e)}"
 
-    def change_view(e):
-        idx = e.control.selected_index
-        main_content.content = None
-        
-        if idx == 0:
-            main_content.content = SingleVideoView(page)
-        elif idx == 1:
-            main_content.content = BatchVideoView(page)
-        elif idx == 2:
-            main_content.content = CreditsView()
-        
-        main_content.update()
+# --- 3. INTERFAZ GRÁFICA ---
+def main(page: ft.Page):
+    # Ajustes básicos de ventana
+    page.title = "Insonio Converter - Z King"
+    page.theme_mode = ft.ThemeMode.DARK
+    page.window_width = 500
+    page.window_height = 600
+    page.padding = 20
 
-    # SOLUCIÓN DE ÍCONOS: Usamos strings ("texto") en lugar de ft.icons.XXX
-    rail = ft.NavigationRail(
-        selected_index=0,
-        label_type=ft.NavigationRailLabelType.ALL,
-        min_width=100,
-        min_extended_width=200,
-        group_alignment=-0.9,
-        destinations=[
-            ft.NavigationRailDestination(
-                icon="play_arrow",              # <--- STRING
-                selected_icon="play_arrow",     # <--- STRING
-                label="Convertir"
-            ),
-            ft.NavigationRailDestination(
-                icon="folder",                  # <--- STRING
-                selected_icon="folder_open",    # <--- STRING
-                label="Lote"
-            ),
-            ft.NavigationRailDestination(
-                icon="info",                    # <--- STRING
-                selected_icon="info_outline",   # <--- STRING
-                label="Créditos"
-            ),
-        ],
-        on_change=change_view
+    # Variables visuales
+    txt_ruta = ft.Text("Ningún archivo seleccionado", italic=True, color="grey")
+    
+    dd_encoder = ft.Dropdown(
+        label="Encoder",
+        width=250,
+        options=[ft.dropdown.Option(x) for x in CONFIG['settings']['encoders_list']],
+        value="libx264"
     )
 
-    main_content.content = SingleVideoView(page)
+    # --- EVENTOS ---
+    
+    # CORRECCIÓN 1: Quitamos ": ft.FilePickerResultEvent"
+    def al_seleccionar_archivo(e): 
+        if e.files:
+            txt_ruta.value = e.files[0].path
+            txt_ruta.color = "white"
+            txt_ruta.weight = "bold"
+            page.update()
 
+    def al_click_convertir(e):
+        if "Ningún" in txt_ruta.value:
+            page.snack_bar = ft.SnackBar(ft.Text("⚠️ Selecciona un video"))
+            page.snack_bar.open = True
+            page.update()
+            return
+        
+        btn_convertir.text = "Procesando..."
+        btn_convertir.disabled = True
+        page.update()
+
+        # Llamar a FFmpeg
+        ok, msg = run_ffmpeg(txt_ruta.value, dd_encoder.value)
+
+        btn_convertir.text = "¡Convertir Video!"
+        btn_convertir.disabled = False
+        
+        # Feedback
+        color_msg = "green" if ok else "red"
+        page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=color_msg)
+        page.snack_bar.open = True
+        page.update()
+
+    # --- FILE PICKER ---
+    # CORRECCIÓN 2: Lo creamos vacío primero
+    selector = ft.FilePicker()
+    # Y le asignamos la función después
+    selector.on_result = al_seleccionar_archivo
+    page.overlay.append(selector)
+
+    # --- DISEÑO ---
     page.add(
-        ft.Row(
-            [rail, ft.VerticalDivider(width=1), main_content],
-            expand=True,
-        )
+        ft.Column([
+            ft.Text("Insonio Converter", size=30, weight="bold", color="cyan"),
+            ft.Divider(),
+            
+            ft.Text("Paso 1: Archivo"),
+            ft.ElevatedButton(
+                "Buscar Video", 
+                icon="folder_open", 
+                on_click=lambda _: selector.pick_files()
+            ),
+            txt_ruta,
+            
+            ft.Divider(),
+            
+            ft.Text("Paso 2: Configuración"),
+            dd_encoder,
+            
+            ft.Container(height=20), # Espacio vacío
+            
+            ft.ElevatedButton(
+                "¡Convertir Video!", 
+                icon="play_circle", 
+                bgcolor="blue", 
+                color="white",
+                height=50,
+                width=250,
+                on_click=al_click_convertir
+            )
+        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
     )
 
+# CORRECCIÓN 3: Usamos run() para versiones nuevas
 if __name__ == "__main__":
-    # SOLUCIÓN ARRANQUE: Usamos target=main explícitamente
-    ft.app(target=main)
+    ft.app(main)

@@ -5,7 +5,6 @@ def BatchVideoView(page: ft.Page):
     files_view = ft.Column(scroll=ft.ScrollMode.AUTO)
     stored_paths = []
 
-    # --- CORRECCIÓN AQUÍ: Quitamos ": ft.FilePickerResultEvent" ---
     def on_files_picked(e):
         if e.files:
             for f in e.files:
@@ -17,13 +16,15 @@ def BatchVideoView(page: ft.Page):
                             ft.Text(f.name)
                         ]),
                         padding=5,
-                        bgcolor=ft.colors.with_opacity(0.1, "white"),
+                        # CORREGIDO: Usamos Hex con Alpha (#1A es ~10% opacidad)
+                        bgcolor="#1AFFFFFF", 
                         border_radius=5
                     )
                 )
             files_view.update()
 
-    file_picker = ft.FilePicker(on_result=on_files_picked)
+    file_picker = ft.FilePicker()
+    file_picker.on_result = on_files_picked
     page.overlay.append(file_picker)
 
     def process_batch(e):
@@ -36,7 +37,6 @@ def BatchVideoView(page: ft.Page):
 
         count = 0
         for path in stored_paths:
-            # Por defecto usamos x264 para batch, luego podrías poner un dropdown aquí también
             run_conversion(path, ".mp4", "libx264")
             count += 1
         
