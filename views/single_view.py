@@ -1,67 +1,72 @@
 import flet as ft
-from utils.ffmpeg_engine import run_conversion
 from utils.config_loader import APP_DATA
 
-def SingleVideoView(page: ft.Page):
-    selected_path = ft.Text("Ningún archivo seleccionado", italic=True, color="grey")
-    
-    def on_file_picked(e):
+class SingleVideoView(ft.Container):
+    def __init__(self, page, on_process_callback):
+        super().__init__()
+        self.page = page
+        self.on_process_callback = on_process_callback # Función para ir a la pantalla de carga
+        self.file_path = None
+        
+        # Elementos UI referenciados
+        self.drop_zone_icon = ft.Icon(name="cloud_upload", size=60, color="grey")
+        self.drop_text = ft.Text("Arrastra tu video aquí o haz click", size=18, color="grey")
+        self.btn_convert = ft.ElevatedButton(
+            "Comenzar Conversión", 
+            icon="play_arrow", 
+            disabled=True, 
+            on_click=self._start_conversion,
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=10),
+                padding=20,
+                bgcolor=ft.colors.CYAN_700,
+                color="white"
+            )
+        )
+        
+        self.picker = ft.FilePicker(on_result=self._on_picker_result)
+        self.page.overlay.append(self.picker)
+        self.content = self._build_ui()
+
+    def _build_ui(self):
+        # Tarjeta degradada
+        return ft.Column([
+            ft.Container(
+                content=ft.Column([
+                    self.drop_zone_icon,
+                    self.drop_text
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                alignment=ft.alignment.center,
+                height=300,
+                border=ft.border.all(2, ft.colors.GREY_400),
+                border_radius=20,
+                on_click=lambda _: self.picker.pick_files(),
+                animate=ft.animation.Animation(300, "bounceOut"),
+                gradient=ft.LinearGradient(
+                    begin=ft.alignment.top_left,
+                    end=ft.alignment.bottom_right,
+                    colors=[ft.colors.with_opacity(0.1, "blue"), ft.colors.with_opacity(0.1, "purple")]
+                )
+            ),
+            ft.Container(height=20),
+            ft.Row([self.btn_convert], alignment=ft.MainAxisAlignment.CENTER)
+        ], alignment=ft.MainAxisAlignment.CENTER)
+
+    # Método público llamado desde main.py cuando arrastras un archivo
+    def set_file(self, path):
+        self.file_path = path
+        self.drop_zone_icon.name = "check_circle"
+        self.drop_zone_icon.color = "green"
+        self.drop_text.value = f"Listo: {path.split('/')[-1]}"
+        self.drop_text.color = "white"
+        self.btn_convert.disabled = False
+        self.update()
+
+    def _on_picker_result(self, e):
         if e.files:
-            selected_path.value = e.files[0].path
-            selected_path.color = "white"
-            selected_path.weight = "bold"
-            selected_path.update()
+            self.set_file(e.files[0].path)
 
-    # Inicialización segura del FilePicker
-    file_picker = ft.FilePicker()
-    file_picker.on_result = on_file_picked
-    page.overlay.append(file_picker)
-
-    options_list = [ft.dropdown.Option(enc) for enc in APP_DATA['settings']['encoders_list']]
-    encoder_dd = ft.Dropdown(
-        label="Encoder de Video",
-        options=options_list,
-        value=options_list[0].key,
-        width=300
-    )
-
-    def convert_click(e):
-        if "Ningún" in selected_path.value:
-            page.snack_bar = ft.SnackBar(ft.Text("⚠️ Selecciona un video primero"))
-            page.snack_bar.open = True
-            page.update()
-            return
-        
-        btn_action.text = "Procesando..."
-        btn_action.disabled = True
-        btn_action.update()
-
-        success, msg = run_conversion(selected_path.value, ".mp4", encoder_dd.value)
-        
-        btn_action.text = "¡Convertir!"
-        btn_action.disabled = False
-        btn_action.update()
-
-        page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor="green" if success else "red")
-        page.snack_bar.open = True
-        page.update()
-
-    btn_action = ft.ElevatedButton(
-        "¡Convertir!", 
-        icon="play_circle", 
-        on_click=convert_click,
-        bgcolor="blue", # <--- CORREGIDO: Usamos string "blue" en lugar de ft.colors...
-        color="white"
-    )
-
-    return ft.Column([
-        ft.Text("Modo Simple", size=25, weight="bold"),
-        ft.Divider(),
-        ft.Text("1. Selecciona tu video:"),
-        ft.ElevatedButton("Buscar Archivo", icon="folder_open", on_click=lambda _: file_picker.pick_files()),
-        selected_path,
-        ft.Text("2. Configuración:"),
-        encoder_dd,
-        ft.Divider(),
-        btn_action
-    ], spacing=15)
+    def _start_conversion(self, e):
+        # Obtenemos config actual para mandarla al proceso
+        options = APP_DATA['settings']
+        self.on_process_callback("single", self.file_path, options)

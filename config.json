@@ -15,11 +15,20 @@
     "window_width": 900,
     "window_height": 650,
     "theme_mode": "dark",
-    "encoders_list": [
-      "libx264", 
-      "libx265", 
-      "vp9",
-      "libaom-av1"
-    ]
+    "encoders_list": ["libx264", "libx265", "vp9", "libaom-av1"]
+  },
+  "ui_labels": {
+    "nav_convert": "Convertir",
+    "nav_batch": "Lote",
+    "nav_credits": "Créditos",
+    "btn_donate": "Donar",
+    "btn_github": "GitHub",
+    "btn_web": "Web Oficial",
+    "lbl_developer": "Desarrollador:",
+    "lbl_company": "Compañía:"
+  },
+  "messages": {
+    "welcome": "Bienvenido a Insonio",
+    "error_load": "Error al cargar configuración"
   }
 }

@@ -1,129 +1,125 @@
 import flet as ft
-import subprocess
-import os
-import json
+from utils.config_loader import APP_DATA, save_config # Necesitarás crear save_config en utils
+from views.single_view import SingleVideoView
+from views.batch_view import BatchVideoView
+from views.credits_view import CreditsView
+from views.config_view import ConfigView # Nueva vista
+from views.processing_view import ProcessingView # Nueva vista
 
-# --- 1. CONFIGURACIÓN ---
-try:
-    with open('config.json', 'r', encoding='utf-8') as f:
-        CONFIG = json.load(f)
-except:
-    CONFIG = {
-        "app_info": {"name": "Insonio Converter", "version": "Rescue Mode"},
-        "settings": {"encoders_list": ["libx264", "libx265", "vp9"]}
-    }
-
-# --- 2. LÓGICA DE FFMPEG ---
-def run_ffmpeg(input_path, encoder):
-    base_name = os.path.splitext(input_path)[0]
-    output_file = f"{base_name}_converted.mp4"
-    
-    comando = [
-        'ffmpeg', '-y', '-i', input_path,
-        '-c:v', encoder, '-preset', 'fast', output_file
-    ]
-    
-    try:
-        # Configuración para ocultar ventana CMD en Windows
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        subprocess.run(comando, startupinfo=startupinfo, check=True)
-        return True, f"✅ Éxito: {os.path.basename(output_file)}"
-    except Exception as e:
-        return False, f"❌ Error: {str(e)}"
-
-# --- 3. INTERFAZ GRÁFICA ---
 def main(page: ft.Page):
-    # Ajustes básicos de ventana
-    page.title = "Insonio Converter - Z King"
-    page.theme_mode = ft.ThemeMode.DARK
-    page.window_width = 500
-    page.window_height = 600
-    page.padding = 20
-
-    # Variables visuales
-    txt_ruta = ft.Text("Ningún archivo seleccionado", italic=True, color="grey")
+    # --- Configuración Visual Global ---
+    page.title = APP_DATA['app_info']['name']
+    page.window_width = APP_DATA['settings']['window_width']
+    page.window_height = APP_DATA['settings']['window_height']
+    page.theme_mode = ft.ThemeMode.DARK # Empezamos en Dark
     
-    dd_encoder = ft.Dropdown(
-        label="Encoder",
-        width=250,
-        options=[ft.dropdown.Option(x) for x in CONFIG['settings']['encoders_list']],
-        value="libx264"
+    # Fuentes y temas modernos
+    page.theme = ft.Theme(
+        color_scheme_seed=ft.colors.CYAN,
+        visual_density=ft.VisualDensity.COMFORTABLE,
+        font_family="Roboto" # O la que prefieras
     )
 
-    # --- EVENTOS ---
-    
-    # CORRECCIÓN 1: Quitamos ": ft.FilePickerResultEvent"
-    def al_seleccionar_archivo(e): 
-        if e.files:
-            txt_ruta.value = e.files[0].path
-            txt_ruta.color = "white"
-            txt_ruta.weight = "bold"
-            page.update()
+    # --- Estado de la App (Variables compartidas) ---
+    state = {
+        "current_view": None, # Referencia a la clase de la vista actual
+        "selected_file": None,
+        "batch_files": []
+    }
 
-    def al_click_convertir(e):
-        if "Ningún" in txt_ruta.value:
-            page.snack_bar = ft.SnackBar(ft.Text("⚠️ Selecciona un video"))
-            page.snack_bar.open = True
-            page.update()
-            return
-        
-        btn_convertir.text = "Procesando..."
-        btn_convertir.disabled = True
-        page.update()
+    # --- Manejador Drag & Drop Global ---
+    def on_file_drop(e: ft.FilePickerResultEvent):
+        # Obtenemos la ruta del primer archivo soltado
+        file_path = e.files[0].path if e.files else None
+        if not file_path: return
 
-        # Llamar a FFmpeg
-        ok, msg = run_ffmpeg(txt_ruta.value, dd_encoder.value)
+        # Lógica inteligente: ¿A dónde va el archivo?
+        if isinstance(state["current_view"], SingleVideoView):
+            state["current_view"].set_file(file_path)
+            mostrar_alerta(f"📂 Archivo cargado: {e.files[0].name}", "green")
+        elif isinstance(state["current_view"], BatchVideoView):
+            state["current_view"].add_file(file_path)
+            mostrar_alerta(f"📂 Añadido a la cola: {e.files[0].name}", "green")
+        else:
+            mostrar_alerta("⚠️ Ve a la pestaña 'Convertir' o 'Lote' para soltar archivos.", "amber")
 
-        btn_convertir.text = "¡Convertir Video!"
-        btn_convertir.disabled = False
-        
-        # Feedback
-        color_msg = "green" if ok else "red"
-        page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=color_msg)
+    page.on_file_drop = on_file_drop 
+
+    # --- Sistema de Alertas Moderno ---
+    def mostrar_alerta(texto, color):
+        page.snack_bar = ft.SnackBar(
+            content=ft.Text(texto, color="white", weight="bold"),
+            bgcolor=color,
+            behavior=ft.SnackBarBehavior.FLOATING,
+            shape=ft.RoundedRectangleBorder(radius=10),
+            show_close_icon=True
+        )
         page.snack_bar.open = True
         page.update()
 
-    # --- FILE PICKER ---
-    # CORRECCIÓN 2: Lo creamos vacío primero
-    selector = ft.FilePicker()
-    # Y le asignamos la función después
-    selector.on_result = al_seleccionar_archivo
-    page.overlay.append(selector)
+    # --- Navegación ---
+    def change_view(e):
+        idx = e.control.selected_index
+        main_content.content = None
+        
+        # Animación de salida (opcional, simplificada aquí)
+        if idx == 0:
+            state["current_view"] = SingleVideoView(page, change_to_processing)
+        elif idx == 1:
+            state["current_view"] = BatchVideoView(page)
+        elif idx == 2:
+            state["current_view"] = ConfigView(page)
+        elif idx == 3:
+            state["current_view"] = CreditsView()
+            
+        main_content.content = state["current_view"]
+        main_content.update()
 
-    # --- DISEÑO ---
-    page.add(
-        ft.Column([
-            ft.Text("Insonio Converter", size=30, weight="bold", color="cyan"),
-            ft.Divider(),
-            
-            ft.Text("Paso 1: Archivo"),
-            ft.ElevatedButton(
-                "Buscar Video", 
-                icon="folder_open", 
-                on_click=lambda _: selector.pick_files()
-            ),
-            txt_ruta,
-            
-            ft.Divider(),
-            
-            ft.Text("Paso 2: Configuración"),
-            dd_encoder,
-            
-            ft.Container(height=20), # Espacio vacío
-            
-            ft.ElevatedButton(
-                "¡Convertir Video!", 
-                icon="play_circle", 
-                bgcolor="blue", 
-                color="white",
-                height=50,
-                width=250,
-                on_click=al_click_convertir
-            )
-        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
+    # Callback para cambiar a pantalla de carga desde las vistas
+    def change_to_processing(mode, file_path, options):
+        state["current_view"] = ProcessingView(page, mode, file_path, options, on_finish=lambda: rail.on_change(ft.ControlEvent(control=rail)))
+        main_content.content = state["current_view"]
+        main_content.update()
+
+    rail = ft.NavigationRail(
+        selected_index=0,
+        label_type=ft.NavigationRailLabelType.ALL,
+        min_width=100,
+        min_extended_width=200,
+        group_alignment=-0.9,
+        destinations=[
+            ft.NavigationRailDestination(icon="movie_creation_outlined", selected_icon="movie_creation", label="Convertir"),
+            ft.NavigationRailDestination(icon="queue_play_next_outlined", selected_icon="queue_play_next", label="Lote"),
+            ft.NavigationRailDestination(icon="settings_outlined", selected_icon="settings", label="Ajustes"),
+            ft.NavigationRailDestination(icon="info_outlined", selected_icon="info", label="Info"),
+        ],
+        on_change=change_view
     )
 
-# CORRECCIÓN 3: Usamos run() para versiones nuevas
+    # Botón Flotante para cambiar Tema (Blanco/Negro)
+    def toggle_theme(e):
+        page.theme_mode = ft.ThemeMode.LIGHT if page.theme_mode == ft.ThemeMode.DARK else ft.ThemeMode.DARK
+        e.control.icon = "dark_mode" if page.theme_mode == ft.ThemeMode.LIGHT else "light_mode"
+        page.update()
+
+    theme_btn = ft.IconButton(icon="light_mode", on_click=toggle_theme, tooltip="Cambiar Tema")
+
+    main_content = ft.Container(expand=True, padding=20)
+    # Inicializar vista
+    state["current_view"] = SingleVideoView(page, change_to_processing)
+    main_content.content = state["current_view"]
+
+    # Layout Principal
+    page.add(
+        ft.Row(
+            [
+                ft.Column([rail, ft.Container(content=theme_btn, padding=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                ft.VerticalDivider(width=1, color=ft.colors.with_opacity(0.1, "grey")),
+                main_content
+            ],
+            expand=True,
+        )
+    )
+
 if __name__ == "__main__":
-    ft.app(main)
+    ft.app(target=main)
