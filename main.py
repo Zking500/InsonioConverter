@@ -7,7 +7,7 @@ from views.batch_view import BatchVideoView
 from views.credits_view import CreditsView
 from views.config_view import ConfigView
 from views.processing_view import ProcessingView
-from views.premium_view import PremiumView
+from views.store_view import StoreView
 
 def main(page: ft.Page):
     # --- Configuración Básica ---
@@ -51,16 +51,27 @@ def main(page: ft.Page):
 
     # --- Componentes UI (crearlos antes de las funciones que los usan) ---
     def toggle_theme(e):
-        page.theme_mode = "light" if page.theme_mode == "dark" else "dark"
-        e.control.icon = "dark_mode" if page.theme_mode == "light" else "light_mode"
-        page.update()
+        # Función legacy, ahora usamos set_theme
+        new_mode = "light" if page.theme_mode == "dark" else "dark"
+        set_theme("light" if new_mode == "light" else "dark")
 
-    def activate_gold_mode():
-        page.theme = ft.Theme(color_scheme_seed=ft.Colors.AMBER)
-        # Forzamos modo dark para que el dorado resalte
-        page.theme_mode = "dark"
+    def set_theme(theme_name):
+        if theme_name == "dark":
+            page.theme_mode = "dark"
+            page.theme = ft.Theme(color_scheme_seed=ft.Colors.BLUE)
+        elif theme_name == "light":
+            page.theme_mode = "light"
+            page.theme = ft.Theme(color_scheme_seed=ft.Colors.BLUE)
+        elif theme_name == "red":
+            page.theme_mode = "dark"
+            page.theme = ft.Theme(color_scheme_seed=ft.Colors.RED)
+        
+        # Actualizar icono del botón flotante si existe
+        if theme_btn:
+             theme_btn.icon = "dark_mode" if page.theme_mode == "light" else "light_mode"
+        
         page.update()
-        mostrar_alerta("✨ MODO PREMIUM ACTIVADO: Eres el rey de los trolls ✨", "amber")
+        mostrar_alerta(f"Tema aplicado: {theme_name.capitalize()}", "green")
 
     rail = ft.NavigationRail(
         selected_index=0,
@@ -73,7 +84,7 @@ def main(page: ft.Page):
             ft.NavigationRailDestination(icon="movie_creation_outlined", selected_icon="movie_creation", label="Convertir"),
             ft.NavigationRailDestination(icon="queue_play_next_outlined", selected_icon="queue_play_next", label="Lote"),
             ft.NavigationRailDestination(icon="settings_outlined", selected_icon="settings", label="Ajustes"),
-            ft.NavigationRailDestination(icon="monetization_on_outlined", selected_icon="monetization_on", label="Premium"),
+            ft.NavigationRailDestination(icon="store_outlined", selected_icon="store", label="Tienda"),
             ft.NavigationRailDestination(icon="info_outlined", selected_icon="info", label="Info"),
         ],
         on_change=None  # Lo asignaremos después
@@ -94,7 +105,7 @@ def main(page: ft.Page):
         elif idx == 2:
             state["current_view"] = ConfigView(page)
         elif idx == 3:
-            state["current_view"] = PremiumView(page, activate_gold_mode)
+            state["current_view"] = StoreView(page, set_theme)
         elif idx == 4:
             state["current_view"] = CreditsView()
             
@@ -109,6 +120,18 @@ def main(page: ft.Page):
     # Asignar el on_change después de que las funciones estén definidas
     rail.on_change = change_view
 
+    # --- Publicidad Pasiva (Banner Inferior) ---
+    ad_bar = ft.Container(
+        content=ft.Row([
+            ft.Text("📢 Publicidad: ¿Quieres convertirte en un experto en Python? Visita nuestro curso.", size=12, color="white"),
+            ft.Text(" [Clic aquí]", size=12, color="blue", weight="bold")
+        ], alignment=ft.MainAxisAlignment.CENTER),
+        bgcolor=ft.Colors.BLACK54,
+        padding=5,
+        height=30,
+        on_click=lambda _: page.launch_url("https://example.com/ad")
+    )
+
     def show_main_app():
         # Mostrar la interfaz principal después de la bienvenida
         page.controls.clear()
@@ -117,15 +140,22 @@ def main(page: ft.Page):
         state["current_view"] = SingleVideoView(page, change_to_processing)
         main_content.content = state["current_view"]
 
+        # Layout principal con barra de publicidad al fondo
         page.add(
-            ft.Row(
-                [
-                    ft.Column([rail, ft.Container(content=theme_btn, padding=10)], alignment="spaceBetween"),
-                    ft.VerticalDivider(width=1, color="grey"),
-                    main_content
-                ],
-                expand=True,
-            )
+            ft.Column([
+                ft.Container(
+                    content=ft.Row(
+                        [
+                            ft.Column([rail, ft.Container(content=theme_btn, padding=10)], alignment="spaceBetween"),
+                            ft.VerticalDivider(width=1, color="grey"),
+                            main_content
+                        ],
+                        expand=True,
+                    ),
+                    expand=True
+                ),
+                ad_bar
+            ], expand=True, spacing=0)
         )
 
     # Mostrar pantalla de bienvenida primero

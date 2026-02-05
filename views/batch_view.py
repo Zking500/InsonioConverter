@@ -51,12 +51,20 @@ def BatchVideoView(page: ft.Page):
         page.snack_bar.open = True
         page.update()
 
+    def clear_list(e):
+        stored_paths.clear()
+        files_view.controls.clear()
+        files_view.update()
+        page.snack_bar = ft.SnackBar(ft.Text("Lista limpiada"))
+        page.snack_bar.open = True
+        page.update()
+
     return ft.Column([
         ft.Text("Modo Lote (Batch)", size=25, weight="bold"),
         ft.Text("Convierte múltiples videos a MP4 (h.264)."),
         ft.Row([
             ft.ElevatedButton("Añadir Videos", icon="add", on_click=lambda _: file_picker.pick_files(allow_multiple=True)),
-            ft.ElevatedButton("Limpiar Lista", icon="delete", color="red", on_click=lambda _: None)
+            ft.ElevatedButton("Limpiar Lista", icon="delete", color="red", on_click=clear_list)
         ]),
         ft.Container(
             content=files_view,

@@ -4,12 +4,17 @@ import os
 def run_conversion(input_path, output_path, encoder="libx264"):
     """
     Ejecuta la conversión usando FFmpeg.
-    Detecta automáticamente si es audio o video según la extensión de salida.
+    Detecta automáticamente si es audio, video o imagen según la extensión de salida.
     """
     
     # Determinar tipo de archivo por extensión
     ext = os.path.splitext(output_path)[1].lower()
-    is_audio = ext in ['.mp3', '.wav', '.aac', '.flac', '.m4a', '.ogg', '.wma']
+    
+    audio_exts = ['.mp3', '.wav', '.aac', '.flac', '.m4a', '.ogg', '.wma']
+    image_exts = ['.jpg', '.jpeg', '.png', '.bmp', '.webp', '.gif', '.tiff']
+    
+    is_audio = ext in audio_exts
+    is_image = ext in image_exts
     
     comando = [
         'ffmpeg',
@@ -17,9 +22,14 @@ def run_conversion(input_path, output_path, encoder="libx264"):
         '-i', input_path,   # Archivo entrada
     ]
 
-    if is_audio:
+    if is_image:
+        # Configuración para imágenes
+        # FFmpeg maneja esto bastante bien por defecto
+        # Si es webp o jpg, podríamos querer calidad, pero default está ok
+        pass 
+        
+    elif is_audio:
         # Configuración para audio
-        # Mapeo simple de codecs comunes, si no se especifica, ffmpeg suele elegir bien el default
         if ext == '.mp3':
             comando.extend(['-c:a', 'libmp3lame', '-q:a', '2'])
         elif ext == '.wav':

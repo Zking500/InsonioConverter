@@ -11,46 +11,16 @@ class ConfigView(ft.Container):
 
     def _build_ui(self):
         # Componentes UI con manejadores de cambio - guardar como atributos
-        self.enc_dropdown = self._crear_dropdown(
-            "Encoder por defecto", 
-            self.settings['encoders_list'], 
-            self.settings['default_encoder'],
-            on_change=self._on_encoder_change
-        )
-        self.fmt_dropdown = self._crear_dropdown(
-            "Formato de Salida", 
-            self.settings['formats_list'], 
-            self.settings['default_format'],
-            on_change=self._on_format_change
-        )
-        self.bit_dropdown = self._crear_dropdown("Bitrate Objetivo", self.settings['bitrates_list'], self.settings['default_bitrate'])
         
         # Hardware acceleration dropdown
         self.hw_dropdown = self._crear_dropdown(
-            "Aceleración por Hardware", 
+            "Aceleración por Hardware / Encoder", 
             self.settings.get('hardware_list', ["cpu", "cuda", "opencl", "qsv"]), 
             self.settings.get('hardware_acceleration', 'cpu'),
             on_change=self._on_hardware_change
         )
         
-        # Ruta de guardado (Simulada visualmente)
-        path_field = ft.TextField(
-            label="Carpeta de Salida", 
-            value=self.settings['save_location'], 
-            read_only=True, 
-            suffix_icon="folder",
-            expand=True
-        )
-
         # Descripciones dinámicas
-        self.enc_description = ft.Text(
-            self.settings['encoder_descriptions'].get(self.settings['default_encoder'], ""),
-            size=12, color="grey", italic=True
-        )
-        self.fmt_description = ft.Text(
-            self.settings['format_descriptions'].get(self.settings['default_format'], ""),
-            size=12, color="grey", italic=True
-        )
         self.hw_description = ft.Text(
             self.settings['hardware_descriptions'].get(self.settings.get('hardware_acceleration', 'cpu'), ""),
             size=12, color="grey", italic=True
@@ -61,12 +31,10 @@ class ConfigView(ft.Container):
                    color=ft.Colors.CYAN if self.page.theme_mode == ft.ThemeMode.DARK else ft.Colors.BLUE),
             ft.Divider(),
             
-            ft.Text("Opciones de Video", size=20, weight="bold"),
+            ft.Text("Rendimiento", size=20, weight="bold"),
+            ft.Text("Selecciona si quieres usar el procesador (CPU) o la tarjeta gráfica (GPU).", size=14),
             ft.Container(
                 content=ft.Column([
-                    self.enc_dropdown, self.enc_description,
-                    self.fmt_dropdown, self.fmt_description,
-                    self.bit_dropdown,
                     self.hw_dropdown, self.hw_description
                 ], spacing=10),
                 padding=20,
@@ -74,9 +42,6 @@ class ConfigView(ft.Container):
                 border_radius=10,
                 animate=ft.Animation(300, "easeOut")
             ),
-
-            ft.Text("Almacenamiento", size=20, weight="bold"),
-            ft.Row([path_field, ft.ElevatedButton("Cambiar", on_click=lambda _: print("Abrir picker"))]),
 
             ft.Container(height=20),
             ft.ElevatedButton(
@@ -97,20 +62,6 @@ class ConfigView(ft.Container):
             on_change=on_change
         )
 
-    def _on_encoder_change(self, e):
-        # Actualizar descripción del encoder
-        encoder = e.control.value
-        if hasattr(self, 'enc_description'):
-            self.enc_description.value = self.settings['encoder_descriptions'].get(encoder, "")
-            self.enc_description.update()
-
-    def _on_format_change(self, e):
-        # Actualizar descripción del formato
-        format_ext = e.control.value
-        if hasattr(self, 'fmt_description'):
-            self.fmt_description.value = self.settings['format_descriptions'].get(format_ext, "")
-            self.fmt_description.update()
-
     def _on_hardware_change(self, e):
         # Actualizar descripción del hardware
         hardware = e.control.value
@@ -123,11 +74,19 @@ class ConfigView(ft.Container):
         from utils.config_loader import save_config
         
         # Actualizar valores en APP_DATA usando las referencias guardadas
-        APP_DATA['settings']['default_encoder'] = self.enc_dropdown.value
-        APP_DATA['settings']['default_format'] = self.fmt_dropdown.value
-        APP_DATA['settings']['default_bitrate'] = self.bit_dropdown.value
         APP_DATA['settings']['hardware_acceleration'] = self.hw_dropdown.value
         
+        # Mapeo simple de hardware a encoder por defecto (opcional)
+        hw = self.hw_dropdown.value
+        if hw == 'cuda':
+             APP_DATA['settings']['default_encoder'] = 'h264_nvenc'
+        elif hw == 'qsv':
+             APP_DATA['settings']['default_encoder'] = 'h264_qsv'
+        elif hw == 'amd':
+             APP_DATA['settings']['default_encoder'] = 'h264_amf'
+        else:
+             APP_DATA['settings']['default_encoder'] = 'libx264'
+
         # Guardar en archivo
         save_config()
         

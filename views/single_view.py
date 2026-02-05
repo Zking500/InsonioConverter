@@ -1,4 +1,5 @@
 import flet as ft
+import os
 from utils.config_loader import APP_DATA
 
 class SingleVideoView(ft.Container):
@@ -10,12 +11,12 @@ class SingleVideoView(ft.Container):
         
         # Elementos UI referenciados
         self.drop_zone_icon = ft.Icon(name="cloud_upload", size=60, color="grey")
-        self.drop_text = ft.Text("Arrastra tu video aquí o haz click", size=18, color="grey")
+        self.drop_text = ft.Text("Arrastra tu video/imagen aquí o haz click", size=18, color="grey")
         self.btn_convert = ft.ElevatedButton(
-            "Comenzar Conversión", 
-            icon="play_arrow", 
+            "Configurar y Convertir", 
+            icon="settings", 
             disabled=True, 
-            on_click=self._start_conversion,
+            on_click=self._open_options_dialog,
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(radius=10),
                 padding=20,
@@ -30,6 +31,10 @@ class SingleVideoView(ft.Container):
         self.page.overlay.append(self.save_picker)
         self.page.update()  # Actualizar el overlay
         self.content = self._build_ui()
+
+        # Variables temporales para la configuración elegida en el diálogo
+        self.selected_format = None
+        self.selected_bitrate = None
 
     def _build_ui(self):
         # Tarjeta degradada
@@ -69,17 +74,90 @@ class SingleVideoView(ft.Container):
         if e.files:
             self.set_file(e.files[0].path)
 
-    def _start_conversion(self, e):
-        # Pedir ubicación de guardado
+    def _open_options_dialog(self, e):
+        # Detectar tipo de archivo
+        ext = os.path.splitext(self.file_path)[1].lower()
+        image_exts = ['.jpg', '.jpeg', '.png', '.bmp', '.webp', '.gif', '.tiff']
+        is_image = ext in image_exts
+        
+        # Dropdowns
+        if is_image:
+            formats = ["png", "jpg", "webp", "bmp", "tiff"]
+            default_fmt = "png"
+            bitrates = [] # No aplica para imágenes en este convertidor simple
+        else:
+            formats = ["mp4", "avi", "mkv", "mov", "mp3", "wav", "aac", "flac"]
+            default_fmt = "mp4"
+            bitrates = ["Auto", "High (1080p)", "Medium (720p)", "Low (480p)"]
+
+        self.dd_format = ft.Dropdown(
+            label="Formato de Salida", 
+            options=[ft.dropdown.Option(f) for f in formats], 
+            value=default_fmt
+        )
+        
+        content_controls = [self.dd_format]
+        
+        if not is_image:
+            self.dd_bitrate = ft.Dropdown(
+                label="Bitrate / Calidad", 
+                options=[ft.dropdown.Option(b) for b in bitrates], 
+                value="Auto"
+            )
+            content_controls.append(self.dd_bitrate)
+
+        def close_dlg(e):
+            self.dialog.open = False
+            self.page.update()
+
+        def proceed(e):
+            self.selected_format = self.dd_format.value
+            if not is_image:
+                self.selected_bitrate = self.dd_bitrate.value
+            
+            self.dialog.open = False
+            self.page.update()
+            self._start_save_process()
+
+        self.dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Opciones de Conversión"),
+            content=ft.Column(content_controls, height=150, tight=True),
+            actions=[
+                ft.TextButton("Cancelar", on_click=close_dlg),
+                ft.TextButton("Continuar", on_click=proceed),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        
+        self.page.dialog = self.dialog
+        self.dialog.open = True
+        self.page.update()
+
+    def _start_save_process(self):
+        # Pedir ubicación de guardado con la extensión seleccionada
+        ext = self.selected_format
+        if not ext.startswith('.'):
+            ext = f".{ext}"
+            
         self.save_picker.save_file(
             dialog_title="Guardar archivo convertido como...",
-            file_name="output.mp4",
-            allowed_extensions=["mp4", "avi", "mkv", "mov", "mp3", "wav", "aac", "flac"]
+            file_name=f"output{ext}",
+            allowed_extensions=[ext.replace('.', '')]
         )
 
     def _on_save_result(self, e):
         if e.path:
-            # Obtenemos config actual para mandarla al proceso
+            # Obtenemos config actual (que ya tiene el hardware seleccionado en ConfigView)
             options = APP_DATA['settings'].copy()
-            options['output_path'] = e.path  # Agregamos la ruta de salida
+            options['output_path'] = e.path
+            
+            # Sobrescribir con lo elegido en el diálogo
+            # Nota: El engine usa 'encoder' desde options, pero el formato lo deduce de la extensión del output_path
+            # El bitrate podríamos pasarlo si el engine lo soportara explícitamente, 
+            # pero por ahora el engine es simple y usa presets.
+            # Podríamos modificar options['default_bitrate'] si quisieramos usarlo luego.
+            if self.selected_bitrate:
+                options['default_bitrate'] = self.selected_bitrate
+            
             self.on_process_callback("single", self.file_path, options)

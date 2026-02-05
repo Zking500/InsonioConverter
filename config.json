@@ -34,10 +34,10 @@
       "qsv"
     ],
     "encoders_list": [
-      "libx264",
-      "libx265",
-      "vp9",
-      "libaom-av1"
+      "libx264", "libx265", "vp9", "libaom-av1",
+      "h264_amf", "hevc_amf", "av1_amf",
+      "h264_nvenc", "hevc_nvenc", "av1_nvenc",
+      "h264_qsv", "hevc_qsv", "av1_qsv"
     ],
     "formats_list": [
       ".mp4",
@@ -60,10 +60,19 @@
       ".mov": "Formato de Apple, ideal para edición de video"
     },
     "encoder_descriptions": {
-      "libx264": "H.264 - Excelente calidad, compresión eficiente, compatible con todo",
-      "libx265": "H.265/HEVC - Mejor compresión que H.264, ideal para 4K",
-      "vp9": "Códec abierto de Google, excelente para web",
-      "libaom-av1": "Códec de nueva generación, mejor compresión que HEVC"
+      "libx264": "CPU: H.264 - Compatibilidad universal, alta calidad 🐌",
+      "libx265": "CPU: HEVC - Excelente compresión para 4K 🐌",
+      "vp9": "CPU: Formato de Google, ideal para YouTube 🐌",
+      "libaom-av1": "CPU: El futuro de la compresión, muy lento en software 🐢",
+      "h264_amf": "AMD: H.264 rápido (Radeon RX 400 o superior) ⚡",
+      "hevc_amf": "AMD: HEVC/H.265 (Radeon RX 5000 o superior) 🚀",
+      "av1_amf": "AMD: AV1 Ultra eficiente (Solo serie RX 7000+) 💎",
+      "h264_nvenc": "NVIDIA: H.264 de alto rendimiento (GTX 600+) ⚡",
+      "hevc_nvenc": "NVIDIA: HEVC de alta calidad (GTX 900+) 🚀",
+      "av1_nvenc": "NVIDIA: AV1 de nueva generación (RTX 4000+) 💎",
+      "h264_qsv": "Intel: QuickSync H.264 (CPUs Core i3/i5/i7) ⚡",
+      "hevc_qsv": "Intel: QuickSync HEVC (Sexta Gen o superior) 🚀",
+      "av1_qsv": "Intel: QuickSync AV1 (Gráficas Arc o Ultra) 💎"
     },
     "hardware_descriptions": {
       "cpu": "CPU: Compatibilidad universal, calidad máxima, más lento 🐌",
