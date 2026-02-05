@@ -7,6 +7,7 @@ from views.batch_view import BatchVideoView
 from views.credits_view import CreditsView
 from views.config_view import ConfigView
 from views.processing_view import ProcessingView
+from views.premium_view import PremiumView
 
 def main(page: ft.Page):
     # --- Configuración Básica ---
@@ -54,6 +55,13 @@ def main(page: ft.Page):
         e.control.icon = "dark_mode" if page.theme_mode == "light" else "light_mode"
         page.update()
 
+    def activate_gold_mode():
+        page.theme = ft.Theme(color_scheme_seed=ft.Colors.AMBER)
+        # Forzamos modo dark para que el dorado resalte
+        page.theme_mode = "dark"
+        page.update()
+        mostrar_alerta("✨ MODO PREMIUM ACTIVADO: Eres el rey de los trolls ✨", "amber")
+
     rail = ft.NavigationRail(
         selected_index=0,
         label_type="all", # En versiones viejas a veces es string o enum simple
@@ -65,6 +73,7 @@ def main(page: ft.Page):
             ft.NavigationRailDestination(icon="movie_creation_outlined", selected_icon="movie_creation", label="Convertir"),
             ft.NavigationRailDestination(icon="queue_play_next_outlined", selected_icon="queue_play_next", label="Lote"),
             ft.NavigationRailDestination(icon="settings_outlined", selected_icon="settings", label="Ajustes"),
+            ft.NavigationRailDestination(icon="monetization_on_outlined", selected_icon="monetization_on", label="Premium"),
             ft.NavigationRailDestination(icon="info_outlined", selected_icon="info", label="Info"),
         ],
         on_change=None  # Lo asignaremos después
@@ -85,6 +94,8 @@ def main(page: ft.Page):
         elif idx == 2:
             state["current_view"] = ConfigView(page)
         elif idx == 3:
+            state["current_view"] = PremiumView(page, activate_gold_mode)
+        elif idx == 4:
             state["current_view"] = CreditsView()
             
         main_content.content = state["current_view"]

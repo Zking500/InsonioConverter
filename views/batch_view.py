@@ -37,8 +37,13 @@ def BatchVideoView(page: ft.Page):
         files_view.update()
 
         count = 0
+        import os
         for path in stored_paths:
-            run_conversion(path, ".mp4", "libx264")
+            # Generar ruta de salida automática
+            base_name = os.path.splitext(path)[0]
+            output_path = f"{base_name}_converted.mp4"
+            
+            run_conversion(path, output_path, "libx264")
             count += 1
         
         files_view.controls.remove(prog_bar)

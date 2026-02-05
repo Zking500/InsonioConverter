@@ -1,7 +1,7 @@
 import flet as ft
 import time
 import threading
-# from utils.ffmpeg_engine import run_conversion (Tu función real)
+from utils.ffmpeg_engine import run_conversion
 
 class ProcessingView(ft.Container):
     def __init__(self, page, mode, file_path, options, on_finish):
@@ -18,7 +18,8 @@ class ProcessingView(ft.Container):
         self.progress_ring = ft.ProgressRing(width=60, height=60, stroke_width=5, color=ft.Colors.CYAN)
         
         # Mostrar ruta de salida si está disponible
-        output_info = ft.Text(f"Guardando en: {options.get('output_path', 'Ubicación predeterminada')}", 
+        output_path = options.get('output_path', 'Ubicación predeterminada')
+        output_info = ft.Text(f"Guardando en: {output_path}", 
                              size=12, color="grey", text_align="center")
         
         self.content = ft.Column([
@@ -38,27 +39,37 @@ class ProcessingView(ft.Container):
 
     def _run_ffmpeg_thread(self):
         # Obtener la ruta de salida de las opciones
-        output_path = self.options.get('output_path', 'output.mp4')
+        output_path = self.options.get('output_path')
         
-        # Simulación de proceso (Aquí llamarías a tu run_conversion real)
-        steps = ["Analizando metadatos...", "Codificando video...", "Empaquetando contenedor...", "Limpiando..."]
-        
-        for step in steps:
-            time.sleep(1.5) # Simula trabajo de FFmpeg
-            self.status_text.value = step
-            self.status_text.update()
-        
-        # Al terminar
-        self.status_text.value = f"¡Terminado! Guardado en: {output_path}"
-        self.progress_ring.value = 1 # 100%
-        self.progress_ring.color = "green"
+        if not output_path:
+             self.status_text.value = "❌ Error: No hay ruta de salida"
+             self.progress_ring.color = "red"
+             self.update()
+             return
+
+        self.status_text.value = "Procesando..."
         self.update()
-        time.sleep(1)
+
+        # Llamada real al motor
+        # Obtenemos el encoder de las opciones, default a libx264
+        encoder = self.options.get('encoder', 'libx264')
         
-        # Volver (opcional) o mostrar botón de "Nuevo archivo"
-        self.page.snack_bar = ft.SnackBar(ft.Text(f"✅ Video guardado en: {output_path}"))
-        self.page.snack_bar.open = True
-        self.page.update()
+        success, message = run_conversion(self.file_path, output_path, encoder)
         
-        # Regresar a la vista anterior o quedarse aquí
-        # self.on_finish()
+        if success:
+            self.status_text.value = "¡Terminado!"
+            self.progress_ring.value = 1 # 100%
+            self.progress_ring.color = "green"
+            self.page.snack_bar = ft.SnackBar(ft.Text(message))
+            self.page.snack_bar.open = True
+        else:
+            self.status_text.value = message
+            self.progress_ring.value = 0
+            self.progress_ring.color = "red"
+            
+        self.update()
+        
+        if success:
+            time.sleep(2)
+            # Opcional: Llamar a on_finish si queremos volver atrás automáticamente
+            # self.on_finish()

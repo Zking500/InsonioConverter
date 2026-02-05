@@ -72,9 +72,9 @@ class SingleVideoView(ft.Container):
     def _start_conversion(self, e):
         # Pedir ubicación de guardado
         self.save_picker.save_file(
-            dialog_title="Guardar video convertido como...",
+            dialog_title="Guardar archivo convertido como...",
             file_name="output.mp4",
-            file_type="video"
+            allowed_extensions=["mp4", "avi", "mkv", "mov", "mp3", "wav", "aac", "flac"]
         )
 
     def _on_save_result(self, e):
