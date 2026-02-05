@@ -1,7 +1,17 @@
 import json
 import os
+import sys
 
-CONFIG_FILE = 'config.json'
+def get_base_path():
+    if getattr(sys, 'frozen', False):
+        # Si es un ejecutable compilado (PyInstaller)
+        return os.path.dirname(sys.executable)
+    else:
+        # Si corre como script (dev), subimos un nivel desde utils/
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+BASE_PATH = get_base_path()
+CONFIG_FILE = os.path.join(BASE_PATH, 'config.json')
 
 def load_config():
     try:
