@@ -10,7 +10,7 @@ __pycache__/
 .vscode/
 .idea/
 .DS_Store
-
+.exe
 # Ignorar builds y distribuciones (cuando crees el .exe)
 build/
 dist/
