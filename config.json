@@ -26,13 +26,50 @@
     "default_format": ".mp4",
     "default_bitrate": "Auto",
     "save_location": "same_as_source",
+    "hardware_acceleration": "cpu",
+    "hardware_list": [
+      "cpu",
+      "cuda",
+      "opencl",
+      "qsv"
+    ],
     "encoders_list": [
-      "libx264", 
-      "libx265", 
+      "libx264",
+      "libx265",
       "vp9",
       "libaom-av1"
     ],
-    "formats_list": [".mp4", ".mkv", ".avi", ".mov"],
-    "bitrates_list": ["Auto", "2M", "4M", "8M", "15M", "25M"]
+    "formats_list": [
+      ".mp4",
+      ".mkv",
+      ".avi",
+      ".mov"
+    ],
+    "bitrates_list": [
+      "Auto",
+      "2M",
+      "4M",
+      "8M",
+      "15M",
+      "25M"
+    ],
+    "format_descriptions": {
+      ".mp4": "Formato universal, compatible con todos los dispositivos",
+      ".mkv": "Contenedor versátil, soporta múltiples pistas de audio y subtítulos",
+      ".avi": "Formato clásico de Windows, amplia compatibilidad",
+      ".mov": "Formato de Apple, ideal para edición de video"
+    },
+    "encoder_descriptions": {
+      "libx264": "H.264 - Excelente calidad, compresión eficiente, compatible con todo",
+      "libx265": "H.265/HEVC - Mejor compresión que H.264, ideal para 4K",
+      "vp9": "Códec abierto de Google, excelente para web",
+      "libaom-av1": "Códec de nueva generación, mejor compresión que HEVC"
+    },
+    "hardware_descriptions": {
+      "cpu": "CPU: Compatibilidad universal, calidad máxima, más lento 🐌",
+      "cuda": "NVIDIA CUDA: Muy rápido, requiere GPU NVIDIA compatible ⚡",
+      "opencl": "OpenCL: Compatible con AMD/Intel, velocidad media 🚀",
+      "vaapi": "VAAPI: Ideal para Intel iGPU, buen balance ⚖️"
+    }
   }
 }

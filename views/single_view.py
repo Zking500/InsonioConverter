@@ -25,7 +25,10 @@ class SingleVideoView(ft.Container):
         )
         
         self.picker = ft.FilePicker(on_result=self._on_picker_result)
+        self.save_picker = ft.FilePicker(on_result=self._on_save_result)
         self.page.overlay.append(self.picker)
+        self.page.overlay.append(self.save_picker)
+        self.page.update()  # Actualizar el overlay
         self.content = self._build_ui()
 
     def _build_ui(self):
@@ -67,6 +70,16 @@ class SingleVideoView(ft.Container):
             self.set_file(e.files[0].path)
 
     def _start_conversion(self, e):
-        # Obtenemos config actual para mandarla al proceso
-        options = APP_DATA['settings']
-        self.on_process_callback("single", self.file_path, options)
+        # Pedir ubicación de guardado
+        self.save_picker.save_file(
+            dialog_title="Guardar video convertido como...",
+            file_name="output.mp4",
+            file_type="video"
+        )
+
+    def _on_save_result(self, e):
+        if e.path:
+            # Obtenemos config actual para mandarla al proceso
+            options = APP_DATA['settings'].copy()
+            options['output_path'] = e.path  # Agregamos la ruta de salida
+            self.on_process_callback("single", self.file_path, options)

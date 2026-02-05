@@ -1,5 +1,7 @@
 import flet as ft
+import asyncio
 from utils.config_loader import APP_DATA
+from utils.welcome_window import WelcomeWindow
 from views.single_view import SingleVideoView
 from views.batch_view import BatchVideoView
 from views.credits_view import CreditsView
@@ -19,11 +21,13 @@ def main(page: ft.Page):
         "current_view": None
     }
 
-    # --- Manejador Drag & Drop Global ---
-    def on_file_drop(e: ft.FilePickerResultEvent):
+    # --- Manejo de Archivos (Drag & Drop) ---
+    def on_file_drop(e):
         file_path = e.files[0].path if e.files else None
-        if not file_path: return
-
+        if not file_path:
+            return
+        
+        # Simplemente delegamos a la vista activa si soporta archivos
         if isinstance(state["current_view"], SingleVideoView):
             state["current_view"].set_file(file_path)
             mostrar_alerta(f"Archivo cargado: {e.files[0].name}", "green")
@@ -43,6 +47,31 @@ def main(page: ft.Page):
         )
         page.snack_bar.open = True
         page.update()
+
+    # --- Componentes UI (crearlos antes de las funciones que los usan) ---
+    def toggle_theme(e):
+        page.theme_mode = "light" if page.theme_mode == "dark" else "dark"
+        e.control.icon = "dark_mode" if page.theme_mode == "light" else "light_mode"
+        page.update()
+
+    rail = ft.NavigationRail(
+        selected_index=0,
+        label_type="all", # En versiones viejas a veces es string o enum simple
+        min_width=100,
+        min_extended_width=200,
+        group_alignment=-0.9,
+        expand=True,  # Agregamos expand=True para solucionar el error de altura
+        destinations=[
+            ft.NavigationRailDestination(icon="movie_creation_outlined", selected_icon="movie_creation", label="Convertir"),
+            ft.NavigationRailDestination(icon="queue_play_next_outlined", selected_icon="queue_play_next", label="Lote"),
+            ft.NavigationRailDestination(icon="settings_outlined", selected_icon="settings", label="Ajustes"),
+            ft.NavigationRailDestination(icon="info_outlined", selected_icon="info", label="Info"),
+        ],
+        on_change=None  # Lo asignaremos después
+    )
+
+    theme_btn = ft.IconButton(icon="light_mode", on_click=toggle_theme, tooltip="Cambiar Tema")
+    main_content = ft.Container(expand=True, padding=10)
 
     # --- Navegación ---
     def change_view(e):
@@ -66,45 +95,32 @@ def main(page: ft.Page):
         main_content.content = state["current_view"]
         main_content.update()
 
-    rail = ft.NavigationRail(
-        selected_index=0,
-        label_type="all", # En versiones viejas a veces es string o enum simple
-        min_width=100,
-        min_extended_width=200,
-        group_alignment=-0.9,
-        expand=True,  # Agregamos expand=True para solucionar el error de altura
-        destinations=[
-            ft.NavigationRailDestination(icon="movie_creation_outlined", selected_icon="movie_creation", label="Convertir"),
-            ft.NavigationRailDestination(icon="queue_play_next_outlined", selected_icon="queue_play_next", label="Lote"),
-            ft.NavigationRailDestination(icon="settings_outlined", selected_icon="settings", label="Ajustes"),
-            ft.NavigationRailDestination(icon="info_outlined", selected_icon="info", label="Info"),
-        ],
-        on_change=change_view
-    )
+    # Asignar el on_change después de que las funciones estén definidas
+    rail.on_change = change_view
 
-    def toggle_theme(e):
-        page.theme_mode = "light" if page.theme_mode == "dark" else "dark"
-        e.control.icon = "dark_mode" if page.theme_mode == "light" else "light_mode"
-        page.update()
+    def show_main_app():
+        # Mostrar la interfaz principal después de la bienvenida
+        page.controls.clear()
+        
+        # Iniciar vista
+        state["current_view"] = SingleVideoView(page, change_to_processing)
+        main_content.content = state["current_view"]
 
-    theme_btn = ft.IconButton(icon="light_mode", on_click=toggle_theme, tooltip="Cambiar Tema")
-
-    main_content = ft.Container(expand=True, padding=10)
-    
-    # Iniciar vista
-    state["current_view"] = SingleVideoView(page, change_to_processing)
-    main_content.content = state["current_view"]
-
-    page.add(
-        ft.Row(
-            [
-                ft.Column([rail, ft.Container(content=theme_btn, padding=10)], alignment="spaceBetween"),
-                ft.VerticalDivider(width=1, color="grey"),
-                main_content
-            ],
-            expand=True,
+        page.add(
+            ft.Row(
+                [
+                    ft.Column([rail, ft.Container(content=theme_btn, padding=10)], alignment="spaceBetween"),
+                    ft.VerticalDivider(width=1, color="grey"),
+                    main_content
+                ],
+                expand=True,
+            )
         )
-    )
+
+    # Mostrar pantalla de bienvenida primero
+    from views.welcome_view import WelcomeView
+    welcome_view = WelcomeView(page, show_main_app)
+    page.add(welcome_view)
 
 if __name__ == "__main__":
     ft.app(target=main)

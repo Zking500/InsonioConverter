@@ -26,6 +26,7 @@ def BatchVideoView(page: ft.Page):
     file_picker = ft.FilePicker()
     file_picker.on_result = on_files_picked
     page.overlay.append(file_picker)
+    page.update()  # Actualizar el overlay
 
     def process_batch(e):
         if not stored_paths:

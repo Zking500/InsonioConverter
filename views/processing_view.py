@@ -17,10 +17,15 @@ class ProcessingView(ft.Container):
         self.status_text = ft.Text("Inicializando motor...", size=20, text_align="center")
         self.progress_ring = ft.ProgressRing(width=60, height=60, stroke_width=5, color=ft.Colors.CYAN)
         
+        # Mostrar ruta de salida si está disponible
+        output_info = ft.Text(f"Guardando en: {options.get('output_path', 'Ubicación predeterminada')}", 
+                             size=12, color="grey", text_align="center")
+        
         self.content = ft.Column([
             self.progress_ring,
             ft.Container(height=20),
             self.status_text,
+            output_info,
             ft.Text("Por favor espera, estamos cocinando los píxeles 👨‍🍳", italic=True, color="grey")
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
         
@@ -32,6 +37,9 @@ class ProcessingView(ft.Container):
         t.start()
 
     def _run_ffmpeg_thread(self):
+        # Obtener la ruta de salida de las opciones
+        output_path = self.options.get('output_path', 'output.mp4')
+        
         # Simulación de proceso (Aquí llamarías a tu run_conversion real)
         steps = ["Analizando metadatos...", "Codificando video...", "Empaquetando contenedor...", "Limpiando..."]
         
@@ -41,14 +49,14 @@ class ProcessingView(ft.Container):
             self.status_text.update()
         
         # Al terminar
-        self.status_text.value = "¡Terminado!"
+        self.status_text.value = f"¡Terminado! Guardado en: {output_path}"
         self.progress_ring.value = 1 # 100%
         self.progress_ring.color = "green"
         self.update()
         time.sleep(1)
         
         # Volver (opcional) o mostrar botón de "Nuevo archivo"
-        self.page.snack_bar = ft.SnackBar(ft.Text("✅ Proceso completado exitosamente"))
+        self.page.snack_bar = ft.SnackBar(ft.Text(f"✅ Video guardado en: {output_path}"))
         self.page.snack_bar.open = True
         self.page.update()
         
