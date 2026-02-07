@@ -21,8 +21,9 @@ class ConfigView(ft.Container):
         )
         
         # Descripciones dinámicas
+        descriptions = self.settings.get('hardware_descriptions', {})
         self.hw_description = ft.Text(
-            self.settings['hardware_descriptions'].get(self.settings.get('hardware_acceleration', 'cpu'), ""),
+            descriptions.get(self.settings.get('hardware_acceleration', 'cpu'), ""),
             size=12, color="grey", italic=True
         )
 
@@ -66,7 +67,8 @@ class ConfigView(ft.Container):
         # Actualizar descripción del hardware
         hardware = e.control.value
         if hasattr(self, 'hw_description'):
-            self.hw_description.value = self.settings['hardware_descriptions'].get(hardware, "")
+            descriptions = self.settings.get('hardware_descriptions', {})
+            self.hw_description.value = descriptions.get(hardware, "")
             self.hw_description.update()
 
     def _guardar_config(self, e):

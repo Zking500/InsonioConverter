@@ -1,6 +1,7 @@
 import flet as ft
 import time
 import threading
+import winsound
 from utils.ffmpeg_engine import run_conversion
 
 class ProcessingView(ft.Container):
@@ -51,12 +52,27 @@ class ProcessingView(ft.Container):
         self.update()
 
         # Llamada real al motor
-        # Obtenemos el encoder de las opciones, default a libx264
-        encoder = self.options.get('encoder', 'libx264')
+        # Determinar encoder basado en aceleración por hardware
+        hw_accel = self.options.get('hardware_acceleration', 'cpu')
+        encoder = 'libx264' # Default CPU
         
-        success, message = run_conversion(self.file_path, output_path, encoder)
+        if hw_accel == 'cuda':
+            encoder = 'h264_nvenc'
+        elif hw_accel == 'qsv':
+            encoder = 'h264_qsv'
+        elif hw_accel == 'opencl':
+            encoder = 'h264_amf'
+            
+        # Calidad / Bitrate
+        quality = self.options.get('default_bitrate', 'Auto')
+        
+        success, message = run_conversion(self.file_path, output_path, encoder, quality)
         
         if success:
+            try:
+                winsound.MessageBeep(winsound.MB_OK)
+            except:
+                pass # Ignorar si falla el sonido
             self.status_text.value = "¡Terminado!"
             self.progress_ring.value = 1 # 100%
             self.progress_ring.color = "green"

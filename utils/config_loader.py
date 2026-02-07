@@ -25,8 +25,17 @@ def load_config():
             "app_info": {"name": "Insonio (Safe Mode)", "version": "Error", "company": "S&O", "developer": "Z King"},
             "urls": {"donation": "", "website": ""},
             "settings": {
-                "window_width": 800, "window_height": 600, "encoders_list": ["libx264"],
-                "default_encoder": "libx264", "default_format": ".mp4", "default_bitrate": "Auto", "save_location": "same_as_source"
+                "window_width": 800, "window_height": 600, 
+                "encoders_list": ["libx264"],
+                "default_encoder": "libx264", "default_format": ".mp4", "default_bitrate": "Auto", "save_location": "same_as_source",
+                "hardware_acceleration": "cpu",
+                "hardware_list": ["cpu", "cuda", "opencl", "qsv"],
+                "hardware_descriptions": {
+                    "cpu": "CPU: Compatibilidad universal, calidad máxima, más lento 🐌",
+                    "cuda": "NVIDIA CUDA: Muy rápido, requiere GPU NVIDIA compatible ⚡",
+                    "opencl": "OpenCL: Compatible con AMD/Intel, velocidad media 🚀",
+                    "qsv": "Intel QSV: Optimizado para procesadores Intel ⚡"
+                }
             }
         }
 

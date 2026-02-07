@@ -1,11 +1,33 @@
 import subprocess
 import os
+import sys
 
-def run_conversion(input_path, output_path, encoder="libx264"):
+def get_ffmpeg_path():
+    """Busca el ejecutable de ffmpeg."""
+    if getattr(sys, 'frozen', False):
+        # Si estamos en el ejecutable compilado (PyInstaller)
+        # El archivo ffmpeg.exe se extrae en la carpeta temporal sys._MEIPASS
+        path = os.path.join(sys._MEIPASS, 'ffmpeg.exe')
+        if os.path.exists(path):
+            return path
+            
+    # Si estamos en desarrollo o no se encontró en _MEIPASS
+    # Buscar en el directorio actual
+    local_path = os.path.join(os.getcwd(), 'ffmpeg.exe')
+    if os.path.exists(local_path):
+        return local_path
+        
+    # Por defecto, confiar en el PATH del sistema
+    return 'ffmpeg'
+
+def run_conversion(input_path, output_path, encoder="libx264", quality_preset="Auto"):
     """
     Ejecuta la conversión usando FFmpeg.
     Detecta automáticamente si es audio, video o imagen según la extensión de salida.
+    quality_preset: "Auto", "High (1080p)", "Medium (720p)", "Low (480p)"
     """
+    
+    ffmpeg_exe = get_ffmpeg_path()
     
     # Determinar tipo de archivo por extensión
     ext = os.path.splitext(output_path)[1].lower()
@@ -17,7 +39,7 @@ def run_conversion(input_path, output_path, encoder="libx264"):
     is_image = ext in image_exts
     
     comando = [
-        'ffmpeg',
+        ffmpeg_exe,
         '-y',               # Sobrescribir
         '-i', input_path,   # Archivo entrada
     ]
@@ -25,7 +47,6 @@ def run_conversion(input_path, output_path, encoder="libx264"):
     if is_image:
         # Configuración para imágenes
         # FFmpeg maneja esto bastante bien por defecto
-        # Si es webp o jpg, podríamos querer calidad, pero default está ok
         pass 
         
     elif is_audio:
@@ -45,7 +66,29 @@ def run_conversion(input_path, output_path, encoder="libx264"):
     else:
         # Configuración para video
         comando.extend(['-c:v', encoder])
-        comando.extend(['-preset', 'fast'])
+        
+        # Ajuste de preset según encoder
+        if "libx264" in encoder or "libx265" in encoder:
+            comando.extend(['-preset', 'fast'])
+        elif "amf" in encoder:
+            # AMD AMF usa quality (speed, balanced, quality)
+            comando.extend(['-quality', 'balanced'])
+        elif "nvenc" in encoder:
+            # NVIDIA NVENC soporta preset p1-p7, pero 'p4' es un buen balance (medium)
+            # También acepta palabras clave en versiones recientes, probemos p4 que es seguro
+            comando.extend(['-preset', 'p4'])
+        elif "qsv" in encoder:
+            # Intel QSV soporta preset (veryfast...veryslow)
+            comando.extend(['-preset', 'fast'])
+        
+        # Calidad / Resolución
+        if quality_preset == "High (1080p)":
+             comando.extend(['-vf', 'scale=-2:1080'])
+        elif quality_preset == "Medium (720p)":
+             comando.extend(['-vf', 'scale=-2:720'])
+        elif quality_preset == "Low (480p)":
+             comando.extend(['-vf', 'scale=-2:480'])
+        
         # Asegurar audio estéreo AAC para compatibilidad
         comando.extend(['-c:a', 'aac'])
 

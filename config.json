@@ -26,7 +26,7 @@
     "default_format": ".mp4",
     "default_bitrate": "Auto",
     "save_location": "same_as_source",
-    "hardware_acceleration": "cpu",
+    "hardware_acceleration": "opencl",
     "hardware_list": [
       "cpu",
       "cuda",
@@ -34,10 +34,19 @@
       "qsv"
     ],
     "encoders_list": [
-      "libx264", "libx265", "vp9", "libaom-av1",
-      "h264_amf", "hevc_amf", "av1_amf",
-      "h264_nvenc", "hevc_nvenc", "av1_nvenc",
-      "h264_qsv", "hevc_qsv", "av1_qsv"
+      "libx264",
+      "libx265",
+      "vp9",
+      "libaom-av1",
+      "h264_amf",
+      "hevc_amf",
+      "av1_amf",
+      "h264_nvenc",
+      "hevc_nvenc",
+      "av1_nvenc",
+      "h264_qsv",
+      "hevc_qsv",
+      "av1_qsv"
     ],
     "formats_list": [
       ".mp4",
@@ -78,7 +87,7 @@
       "cpu": "CPU: Compatibilidad universal, calidad máxima, más lento 🐌",
       "cuda": "NVIDIA CUDA: Muy rápido, requiere GPU NVIDIA compatible ⚡",
       "opencl": "OpenCL: Compatible con AMD/Intel, velocidad media 🚀",
-      "vaapi": "VAAPI: Ideal para Intel iGPU, buen balance ⚖️"
+      "qsv": "Intel QSV: Optimizado para procesadores Intel ⚡"
     }
   }
 }
