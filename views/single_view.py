@@ -20,7 +20,7 @@ class SingleVideoView(ft.Container):
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(radius=10),
                 padding=20,
-                bgcolor=ft.Colors.CYAN_700,
+                bgcolor=ft.Colors.PURPLE_700,
                 color="white"
             )
         )
@@ -59,7 +59,7 @@ class SingleVideoView(ft.Container):
                 gradient=ft.LinearGradient(
                     begin=ft.alignment.top_left,
                     end=ft.alignment.bottom_right,
-                    colors=[ft.Colors.with_opacity(0.1, "blue"), ft.Colors.with_opacity(0.1, "purple")]
+                    colors=[ft.Colors.with_opacity(0.1, "purple"), ft.Colors.with_opacity(0.1, "deeppurple")]
                 )
             ),
             ft.Container(height=20),
@@ -167,7 +167,7 @@ class SingleVideoView(ft.Container):
                     gradient=ft.LinearGradient(
                         begin=ft.alignment.top_left,
                         end=ft.alignment.bottom_right,
-                        colors=[ft.Colors.with_opacity(0.08, "cyan"), ft.Colors.with_opacity(0.08, "purple")]
+                        colors=[ft.Colors.with_opacity(0.08, "purple"), ft.Colors.with_opacity(0.08, "deeppurple")]
                     ),
                     animate=ft.Animation(300, "easeOut")
                 )

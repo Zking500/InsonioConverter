@@ -166,7 +166,7 @@ def main(page: ft.Page):
     ad_bar = ft.Container(
         content=ft.Row([
             ft.Text("💝 Apoya el desarrollo: ¿Te gusta Insonio Converter? Considera hacer una donación.", size=12, color="white"),
-            ft.Text(" [Donar aquí]", size=12, color="blue", weight="bold")
+            ft.Text(" [Donar aquí]", size=12, color="purple", weight="bold")
         ], alignment=ft.MainAxisAlignment.CENTER),
         bgcolor=ft.Colors.BLACK54,
         padding=5,
@@ -212,7 +212,7 @@ def main(page: ft.Page):
             gradient=ft.LinearGradient(
                 begin=ft.alignment.top_left,
                 end=ft.alignment.bottom_right,
-                colors=[ft.Colors.with_opacity(0.9, "purple"), ft.Colors.with_opacity(0.9, "cyan")]
+                colors=[ft.Colors.with_opacity(0.9, "purple"), ft.Colors.with_opacity(0.9, "deeppurple")]
             ),
             border=ft.border.all(2, ft.Colors.WHITE),
             shadow=ft.BoxShadow(

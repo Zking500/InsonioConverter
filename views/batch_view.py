@@ -216,7 +216,7 @@ def BatchVideoView(page: ft.Page):
             gradient=ft.LinearGradient(
                 begin=ft.alignment.top_left,
                 end=ft.alignment.bottom_right,
-                colors=[ft.Colors.with_opacity(0.1, "cyan"), ft.Colors.with_opacity(0.1, "purple")]
+                colors=[ft.Colors.with_opacity(0.1, "purple"), ft.Colors.with_opacity(0.1, "deeppurple")]
             ),
             animate=ft.Animation(300, "easeOut")
         )
