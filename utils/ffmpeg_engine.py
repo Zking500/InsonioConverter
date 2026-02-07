@@ -20,7 +20,7 @@ def get_ffmpeg_path():
     # Por defecto, confiar en el PATH del sistema
     return 'ffmpeg'
 
-def run_conversion(input_path, output_path, encoder="libx264", quality_preset="Auto"):
+def run_conversion(input_path, output_path, encoder="libx264", quality_preset="Auto", fps=None, target_width=None, target_height=None, crf=None):
     """
     Ejecuta la conversión usando FFmpeg.
     Detecta automáticamente si es audio, video o imagen según la extensión de salida.
@@ -45,9 +45,10 @@ def run_conversion(input_path, output_path, encoder="libx264", quality_preset="A
     ]
 
     if is_image:
-        # Configuración para imágenes
-        # FFmpeg maneja esto bastante bien por defecto
-        pass 
+        if target_width and target_height:
+            comando.extend(['-vf', f'scale={int(target_width)}:{int(target_height)}'])
+        elif target_height:
+            comando.extend(['-vf', f'scale=-2:{int(target_height)}'])
         
     elif is_audio:
         # Configuración para audio
@@ -70,6 +71,8 @@ def run_conversion(input_path, output_path, encoder="libx264", quality_preset="A
         # Ajuste de preset según encoder
         if "libx264" in encoder or "libx265" in encoder:
             comando.extend(['-preset', 'fast'])
+            if crf is not None and "libx264" in encoder:
+                comando.extend(['-crf', str(int(crf))])
         elif "amf" in encoder:
             # AMD AMF usa quality (speed, balanced, quality)
             comando.extend(['-quality', 'balanced'])
@@ -82,12 +85,23 @@ def run_conversion(input_path, output_path, encoder="libx264", quality_preset="A
             comando.extend(['-preset', 'fast'])
         
         # Calidad / Resolución
-        if quality_preset == "High (1080p)":
-             comando.extend(['-vf', 'scale=-2:1080'])
-        elif quality_preset == "Medium (720p)":
-             comando.extend(['-vf', 'scale=-2:720'])
-        elif quality_preset == "Low (480p)":
-             comando.extend(['-vf', 'scale=-2:480'])
+        vf_applied = False
+        if target_width and target_height:
+            comando.extend(['-vf', f'scale={int(target_width)}:{int(target_height)}'])
+            vf_applied = True
+        elif target_height:
+            comando.extend(['-vf', f'scale=-2:{int(target_height)}'])
+            vf_applied = True
+        if not vf_applied:
+            if quality_preset == "High (1080p)":
+                 comando.extend(['-vf', 'scale=-2:1080'])
+            elif quality_preset == "Medium (720p)":
+                 comando.extend(['-vf', 'scale=-2:720'])
+            elif quality_preset == "Low (480p)":
+                 comando.extend(['-vf', 'scale=-2:480'])
+        
+        if fps and not is_image:
+            comando.extend(['-r', str(int(fps))])
         
         # Asegurar audio estéreo AAC para compatibilidad
         comando.extend(['-c:a', 'aac'])

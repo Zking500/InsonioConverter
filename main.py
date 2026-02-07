@@ -3,6 +3,7 @@ import asyncio
 from utils.config_loader import APP_DATA
 from utils.welcome_window import WelcomeWindow
 from views.single_view import SingleVideoView
+from views.audio_view import AudioView
 from views.batch_view import BatchVideoView
 from views.credits_view import CreditsView
 from views.config_view import ConfigView
@@ -32,6 +33,9 @@ def main(page: ft.Page):
         if isinstance(state["current_view"], SingleVideoView):
             state["current_view"].set_file(file_path)
             mostrar_alerta(f"Archivo cargado: {e.files[0].name}", "green")
+        elif isinstance(state["current_view"], AudioView):
+            state["current_view"].set_file(file_path)
+            mostrar_alerta(f"Audio cargado: {e.files[0].name}", "green")
         elif isinstance(state["current_view"], BatchVideoView):
             state["current_view"].add_file(file_path)
             mostrar_alerta(f"Añadido a la cola: {e.files[0].name}", "green")
@@ -82,6 +86,7 @@ def main(page: ft.Page):
         expand=True,  # Agregamos expand=True para solucionar el error de altura
         destinations=[
             ft.NavigationRailDestination(icon="movie_creation_outlined", selected_icon="movie_creation", label="Convertir"),
+            ft.NavigationRailDestination(icon="audiotrack_outlined", selected_icon="audiotrack", label="Audio"),
             ft.NavigationRailDestination(icon="queue_play_next_outlined", selected_icon="queue_play_next", label="Lote"),
             ft.NavigationRailDestination(icon="settings_outlined", selected_icon="settings", label="Ajustes"),
             ft.NavigationRailDestination(icon="store_outlined", selected_icon="store", label="Tienda"),
@@ -101,12 +106,14 @@ def main(page: ft.Page):
         if idx == 0:
             state["current_view"] = SingleVideoView(page, change_to_processing)
         elif idx == 1:
-            state["current_view"] = BatchVideoView(page)
+            state["current_view"] = AudioView(page, change_to_processing)
         elif idx == 2:
-            state["current_view"] = ConfigView(page)
+            state["current_view"] = BatchVideoView(page)
         elif idx == 3:
-            state["current_view"] = StoreView(page, set_theme)
+            state["current_view"] = ConfigView(page)
         elif idx == 4:
+            state["current_view"] = StoreView(page, set_theme)
+        elif idx == 5:
             state["current_view"] = CreditsView()
             
         main_content.content = state["current_view"]
@@ -131,6 +138,25 @@ def main(page: ft.Page):
         height=30,
         on_click=lambda _: page.launch_url("https://example.com/ad")
     )
+
+    # --- Diálogo de Donación ---
+    def show_donation_dialog():
+        dlg = ft.AlertDialog(
+            title=ft.Text("¡Apoya a Insonio Converter! ☕"),
+            content=ft.Column([
+                ft.Text("Este programa es financiado por sus donaciones."),
+                ft.Text("Si te gusta y quieres desbloquear funciones Premium (futuro) o solo invitarme un café, visita mi Ko-fi.", size=14),
+                ft.Image(src="https://storage.ko-fi.com/cdn/brandasset/kofi_button_red.png", width=200, height=50, fit=ft.ImageFit.CONTAIN, src_base64=None)
+            ], height=150, tight=True),
+            actions=[
+                ft.TextButton("Ir a Ko-fi", on_click=lambda _: page.launch_url("https://ko-fi.com/simel")), # Reemplazar con URL real si existe
+                ft.TextButton("Quizás luego", on_click=lambda _: page.close_dialog())
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        page.dialog = dlg
+        dlg.open = True
+        page.update()
 
     def show_main_app():
         # Mostrar la interfaz principal después de la bienvenida
@@ -157,6 +183,9 @@ def main(page: ft.Page):
                 ad_bar
             ], expand=True, spacing=0)
         )
+        
+        # Mostrar popup de donación al iniciar la app principal
+        show_donation_dialog()
 
     # Mostrar pantalla de bienvenida primero
     from views.welcome_view import WelcomeView

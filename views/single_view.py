@@ -35,6 +35,12 @@ class SingleVideoView(ft.Container):
         # Variables temporales para la configuración elegida en el diálogo
         self.selected_format = None
         self.selected_bitrate = None
+        self.selected_name = None
+        self.selected_fps = None
+        self.selected_resolution = None
+        self.custom_width = None
+        self.custom_height = None
+        self.selected_crf = None
 
     def _build_ui(self):
         # Tarjeta degradada
@@ -88,27 +94,87 @@ class SingleVideoView(ft.Container):
             if is_image:
                 formats = ["png", "jpg", "webp", "bmp", "tiff"]
                 default_fmt = "png"
-                bitrates = [] # No aplica para imágenes en este convertidor simple
+                bitrates = []
             else:
-                formats = ["mp4", "avi", "mkv", "mov", "mp3", "wav", "aac", "flac"]
+                formats = ["mp4", "avi", "mkv", "mov"]
                 default_fmt = "mp4"
                 bitrates = ["Auto", "High (1080p)", "Medium (720p)", "Low (480p)"]
 
+            base_name = os.path.splitext(os.path.basename(self.file_path))[0]
+            self.tf_name = ft.TextField(label="Nombre de archivo", value=base_name, dense=True)
             self.dd_format = ft.Dropdown(
                 label="Formato de Salida", 
                 options=[ft.dropdown.Option(f) for f in formats], 
                 value=default_fmt
             )
             
-            content_controls = [self.dd_format]
-            
-            if not is_image:
-                self.dd_bitrate = ft.Dropdown(
-                    label="Bitrate / Calidad", 
-                    options=[ft.dropdown.Option(b) for b in bitrates], 
+            if is_image:
+                self.dd_resolution = ft.Dropdown(
+                    label="Tamaño",
+                    options=[ft.dropdown.Option(o) for o in ["Mantener", "480p", "720p", "1080p", "1440p", "2160p (4K)", "Personalizado"]],
+                    value="Mantener"
+                )
+                self.tf_width = ft.TextField(label="Ancho", value="", dense=True, keyboard_type=ft.KeyboardType.NUMBER, visible=False)
+                self.tf_height = ft.TextField(label="Alto", value="", dense=True, keyboard_type=ft.KeyboardType.NUMBER, visible=False)
+                def on_res_change(e):
+                    v = self.dd_resolution.value
+                    show_custom = v == "Personalizado"
+                    self.tf_width.visible = show_custom
+                    self.tf_height.visible = show_custom
+                    self.page.update()
+                self.dd_resolution.on_change = on_res_change
+            else:
+                self.dd_fps = ft.Dropdown(
+                    label="FPS",
+                    options=[ft.dropdown.Option(o) for o in ["Mantener", "24", "30", "60", "120"]],
+                    value="Mantener"
+                )
+                self.dd_resolution = ft.Dropdown(
+                    label="Resolución",
+                    options=[ft.dropdown.Option(o) for o in ["Mantener", "480p", "720p", "1080p", "1440p", "2160p (4K)", "Personalizado"]],
+                    value="Mantener"
+                )
+                self.tf_width = ft.TextField(label="Ancho", value="", dense=True, keyboard_type=ft.KeyboardType.NUMBER, visible=False)
+                self.tf_height = ft.TextField(label="Alto", value="", dense=True, keyboard_type=ft.KeyboardType.NUMBER, visible=False)
+                def on_res_change(e):
+                    v = self.dd_resolution.value
+                    show_custom = v == "Personalizado"
+                    self.tf_width.visible = show_custom
+                    self.tf_height.visible = show_custom
+                    self.page.update()
+                self.dd_resolution.on_change = on_res_change
+                self.dd_quality = ft.Dropdown(
+                    label="Calidad",
+                    options=[ft.dropdown.Option(b) for b in ["Auto", "High (1080p)", "Medium (720p)", "Low (480p)", "CRF Manual"]],
                     value="Auto"
                 )
-                content_controls.append(self.dd_bitrate)
+                self.slider_crf = ft.Slider(min=18, max=28, divisions=10, value=23, label="{value}", visible=False)
+                def on_quality_change(e):
+                    show_crf = self.dd_quality.value == "CRF Manual"
+                    self.slider_crf.visible = show_crf
+                    self.page.update()
+                self.dd_quality.on_change = on_quality_change
+            
+            content_controls = [
+                ft.Container(
+                    content=ft.Column(
+                        ([self.tf_name, self.dd_format] +
+                         ([self.dd_resolution, self.tf_width, self.tf_height] if is_image else [self.dd_fps, self.dd_resolution, self.tf_width, self.tf_height, self.dd_quality, self.slider_crf])),
+                        spacing=10
+                    ),
+                    padding=15,
+                    border_radius=15,
+                    gradient=ft.LinearGradient(
+                        begin=ft.alignment.top_left,
+                        end=ft.alignment.bottom_right,
+                        colors=[ft.Colors.with_opacity(0.08, "cyan"), ft.Colors.with_opacity(0.08, "purple")]
+                    ),
+                    animate=ft.Animation(300, "easeOut")
+                )
+            ]
+            
+            if not is_image:
+                self.dd_bitrate = None
 
             def close_dlg(e):
                 if hasattr(self.page, "close"):
@@ -119,8 +185,23 @@ class SingleVideoView(ft.Container):
 
             def proceed(e):
                 self.selected_format = self.dd_format.value
-                if not is_image:
-                    self.selected_bitrate = self.dd_bitrate.value
+                self.selected_name = self.tf_name.value.strip() if self.tf_name.value else None
+                if is_image:
+                    self.selected_resolution = self.dd_resolution.value
+                    if self.tf_width.value:
+                        self.custom_width = self.tf_width.value
+                    if self.tf_height.value:
+                        self.custom_height = self.tf_height.value
+                else:
+                    self.selected_fps = self.dd_fps.value
+                    self.selected_resolution = self.dd_resolution.value
+                    if self.tf_width.value:
+                        self.custom_width = self.tf_width.value
+                    if self.tf_height.value:
+                        self.custom_height = self.tf_height.value
+                    self.selected_bitrate = self.dd_quality.value
+                    if self.dd_quality.value == "CRF Manual":
+                        self.selected_crf = int(self.slider_crf.value)
                 
                 if hasattr(self.page, "close"):
                     self.page.close(self.dialog)
@@ -133,7 +214,7 @@ class SingleVideoView(ft.Container):
             self.dialog = ft.AlertDialog(
                 modal=True,
                 title=ft.Text("Opciones de Conversión"),
-                content=ft.Column(content_controls, height=150, tight=True),
+                content=ft.Column(content_controls, height=250, tight=True),
                 actions=[
                     ft.TextButton("Cancelar", on_click=close_dlg),
                     ft.TextButton("Continuar", on_click=proceed),
@@ -158,9 +239,10 @@ class SingleVideoView(ft.Container):
         if not ext.startswith('.'):
             ext = f".{ext}"
             
+        name = self.selected_name if self.selected_name else "output"
         self.save_picker.save_file(
             dialog_title="Guardar archivo convertido como...",
-            file_name=f"output{ext}",
+            file_name=f"{name}{ext}",
             allowed_extensions=[ext.replace('.', '')]
         )
 
@@ -171,11 +253,17 @@ class SingleVideoView(ft.Container):
             options['output_path'] = e.path
             
             # Sobrescribir con lo elegido en el diálogo
-            # Nota: El engine usa 'encoder' desde options, pero el formato lo deduce de la extensión del output_path
-            # El bitrate podríamos pasarlo si el engine lo soportara explícitamente, 
-            # pero por ahora el engine es simple y usa presets.
-            # Podríamos modificar options['default_bitrate'] si quisieramos usarlo luego.
             if self.selected_bitrate:
-                options['default_bitrate'] = self.selected_bitrate
+                options['quality_preset'] = self.selected_bitrate
+            if self.selected_fps and self.selected_fps != "Mantener":
+                options['target_fps'] = int(self.selected_fps)
+            if self.selected_resolution and self.selected_resolution != "Mantener":
+                options['target_resolution'] = self.selected_resolution
+            if self.custom_width:
+                options['custom_width'] = int(self.custom_width)
+            if self.custom_height:
+                options['custom_height'] = int(self.custom_height)
+            if self.selected_crf:
+                options['crf'] = int(self.selected_crf)
             
             self.on_process_callback("single", self.file_path, options)

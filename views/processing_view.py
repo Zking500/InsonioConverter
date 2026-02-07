@@ -1,6 +1,7 @@
 import flet as ft
 import time
 import threading
+import os
 import winsound
 from utils.ffmpeg_engine import run_conversion
 
@@ -13,6 +14,14 @@ class ProcessingView(ft.Container):
         self.file_path = file_path
         self.options = options
         self.on_finish = on_finish
+        
+        # Audio Player
+        self.audio_player = ft.Audio(
+            src="assets/notification.wav", 
+            autoplay=False
+        )
+        self.page.overlay.append(self.audio_player)
+        self.page.update()
         
         # UI Elements
         self.status_text = ft.Text("Inicializando motor...", size=20, text_align="center")
@@ -63,14 +72,38 @@ class ProcessingView(ft.Container):
         elif hw_accel == 'opencl':
             encoder = 'h264_amf'
             
-        # Calidad / Bitrate
-        quality = self.options.get('default_bitrate', 'Auto')
+        quality = self.options.get('quality_preset', 'Auto')
+        fps_opt = self.options.get('target_fps')
+        res = self.options.get('target_resolution')
+        width_opt = self.options.get('custom_width')
+        height_opt = self.options.get('custom_height')
+        crf_opt = self.options.get('crf')
+        target_h = None
+        target_w = None
+        if res == "480p":
+            target_h = 480
+        elif res == "720p":
+            target_h = 720
+        elif res == "1080p":
+            target_h = 1080
+        elif res == "1440p":
+            target_h = 1440
+        elif res and "2160" in res:
+            target_h = 2160
+        if height_opt:
+            target_h = height_opt
+        if width_opt:
+            target_w = width_opt
         
-        success, message = run_conversion(self.file_path, output_path, encoder, quality)
+        success, message = run_conversion(self.file_path, output_path, encoder, quality, fps=fps_opt, target_width=target_w, target_height=target_h, crf=crf_opt)
         
         if success:
             try:
-                winsound.MessageBeep(winsound.MB_OK)
+                # Intentar reproducir audio personalizado si existe
+                if os.path.exists("assets/notification.wav"):
+                    self.audio_player.play()
+                else:
+                    winsound.MessageBeep(winsound.MB_OK)
             except:
                 pass # Ignorar si falla el sonido
             self.status_text.value = "¡Terminado!"
