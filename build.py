@@ -17,8 +17,12 @@ PyInstaller.__main__.run([
     '--onefile',
     '--windowed',
     '--clean',
+    '--icon=InsomnioConverter.ico',  # Icono de la aplicación
     '--add-binary=ffmpeg.exe;.',  # Incluir FFmpeg en la raíz del exe
     '--add-data=config.json;.',   # Incluir config base por si acaso
+    '--add-data=assets/*.mp3;assets',  # Incluir sonidos MP3
+    '--add-data=assets/*.wav;assets',  # Incluir sonidos WAV
+    '--add-data=BarberChop.otf;.',  # Incluir fuente personalizada
     '--hidden-import=flet',
 ])
 
